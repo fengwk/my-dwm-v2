@@ -87,6 +87,8 @@ enum { Manager, Xembed, XembedInfo, XLast }; /* Xembed atoms */
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
+enum { UP, DOWN, LEFT, RIGHT }; /* movewin */
+enum { V_EXPAND, V_REDUCE, H_EXPAND, H_REDUCE }; /* resizewins */
 
 typedef union {
 	int i;
@@ -297,6 +299,8 @@ static int xerrordummy(Display *dpy, XErrorEvent *ee);
 static int xerrorstart(Display *dpy, XErrorEvent *ee);
 static void xinitvisual();
 static void zoom(const Arg *arg);
+static void movewin(const Arg *arg);
+static void resizewin(const Arg *arg);
 
 /* variables */
 static Systray *systray =  NULL;
@@ -3084,6 +3088,85 @@ zoom(const Arg *arg)
 	if (c == nexttiled(selmon->clients) && !(c = nexttiled(c->next)))
 		return;
 	pop(c);
+}
+
+void
+movewin(const Arg *arg)
+{
+    Client *c;
+    int nx, ny;
+    unsigned int n;
+    int oh, ov, ih, iv;
+    getgaps(selmon, &oh, &ov, &ih, &iv, &n);
+
+    c = selmon->sel;
+    if (!c || c->isfullscreen)
+        return;
+    if (!c->isfloating)
+        togglefloating(NULL);
+    nx = c->x;
+    ny = c->y;
+    switch (arg->ui) {
+        case UP:
+            ny -= c->mon->wh / 4;
+            ny = MAX(ny, c->mon->wy + oh);
+            break;
+        case DOWN:
+            ny += c->mon->wh / 4;
+            ny = MIN(ny, c->mon->wy + c->mon->wh - oh - HEIGHT(c));
+            break;
+        case LEFT:
+            nx -= c->mon->ww / 4;
+            nx = MAX(nx, c->mon->wx + ov);
+            break;
+        case RIGHT:
+            nx += c->mon->ww / 4;
+            nx = MIN(nx, c->mon->wx + c->mon->ww - ov - WIDTH(c));
+            break;
+    }
+    resize(c, nx, ny, c->w, c->h, 1);
+    focus(c);
+}
+
+void
+resizewin(const Arg *arg)
+{
+    Client *c;
+    int nh, nw;
+    unsigned int n;
+    int oh, ov, ih, iv;
+    getgaps(selmon, &oh, &ov, &ih, &iv, &n);
+
+    c = selmon->sel;
+    if (!c || c->isfullscreen)
+        return;
+    if (!c->isfloating)
+        togglefloating(NULL);
+    nw = c->w;
+    nh = c->h;
+    switch (arg->ui) {
+        case H_EXPAND:
+            nw += selmon->wh / 10;
+            break;
+        case H_REDUCE:
+            nw -= selmon->wh / 10;
+            break;
+        case V_EXPAND:
+            nh += selmon->ww / 10;
+            break;
+        case V_REDUCE:
+            nh -= selmon->ww / 10;
+            break;
+    }
+    nw = MAX(nw, selmon->ww / 10);
+    nh = MAX(nh, selmon->wh / 10);
+    if (c->x + nw + ov + 2 * c->bw > selmon->wx + selmon->ww)
+        nw = selmon->wx + selmon->ww - c->x - ov - 2 * c->bw;
+    if (c->y + nh + oh + 2 * c->bw > selmon->wy + selmon->wh)
+        nh = selmon->wy + selmon->wh - c->y - oh - 2 * c->bw;
+    resize(c, c->x, c->y, nw, nh, 1);
+    focus(c);
+    XWarpPointer(dpy, None, root, 0, 0, 0, 0, c->x + c->w - 2 * c->bw, c->y + c->h - 2 * c->bw);
 }
 
 int
