@@ -85,11 +85,13 @@ static const Layout layouts[] = {
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
 static const char *termcmd[]  = { "st", NULL };
-static const char *termcmd[]  = { "alacritty", NULL };
+// static const char *termcmd[]  = { "alacritty", NULL };
 static const char *flameshotcmd[] = { "flameshot", "gui", NULL };
 static const char *rofi_win[] = { "rofi", "-show", "window", NULL };
 static const char *rofi_run[] = { "rofi", "-show", "run", NULL };
 static const char *rofi_drun[] = { "rofi", "-show", "drun", NULL };
+static const char scratchpadname[] = "scratchpad";
+static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
 
 /* 
  * xev命令可以获取keycode
@@ -103,6 +105,7 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
 	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
   { MODKEY,                       XK_Print,  spawn,          {.v = flameshotcmd } },
+	{ MODKEY,                       XK_grave,  togglescratch,  {.v = scratchpadcmd } },
   // { MODKEY,                       XK_w,      spawn,          {.v = rofi_win } },
   // { MODKEY,                       XK_p,      spawn,          {.v = rofi_run } },
   // { MODKEY|ShiftMask,             XK_p,      spawn,          {.v = rofi_drun } },
@@ -135,10 +138,10 @@ static const Key keys[] = {
   { Mod4Mask,                     XK_Left,   movewin,        {.ui = LEFT} }, // 向左移动窗口
   { Mod4Mask,                     XK_Right,  movewin,        {.ui = RIGHT} }, // 向右移动窗口
 	{ Mod4Mask,                     XK_f,      togglefloating, {0} }, // 窗口浮动开关
-  { Mod1Mask,                     XK_Up,     resizewin,      {.ui = V_REDUCE} }, // 垂直减少窗口大小
-  { Mod1Mask,                     XK_Down,   resizewin,      {.ui = V_EXPAND} }, // 垂直增加窗口大小
-  { Mod1Mask,                     XK_Left,   resizewin,      {.ui = H_REDUCE} }, // 水平减少窗口大小
-  { Mod1Mask,                     XK_Right,  resizewin,      {.ui = H_EXPAND} }, // 水平增加窗口大小
+  { Mod1Mask|Mod4Mask,            XK_Up,     resizewin,      {.ui = V_REDUCE} }, // 垂直减少窗口大小
+  { Mod1Mask|Mod4Mask,            XK_Down,   resizewin,      {.ui = V_EXPAND} }, // 垂直增加窗口大小
+  { Mod1Mask|Mod4Mask,            XK_Left,   resizewin,      {.ui = H_REDUCE} }, // 水平减少窗口大小
+  { Mod1Mask|Mod4Mask,            XK_Right,  resizewin,      {.ui = H_EXPAND} }, // 水平增加窗口大小
 	{ MODKEY,                       XK_Tab,    view,           {0} },
 	{ MODKEY,                       XK_w,      toggleoverview, {0} },
 	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
