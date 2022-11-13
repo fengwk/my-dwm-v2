@@ -311,7 +311,7 @@ static void (*handler[LASTEvent]) (XEvent *) = {
 	[ConfigureRequest] = configurerequest,
 	[ConfigureNotify] = configurenotify,
 	[DestroyNotify] = destroynotify,
-	[EnterNotify] = enternotify,
+	[EnterNotify] = enternotify, // 注释这行可以禁止鼠标悬浮聚焦
 	[Expose] = expose,
 	[FocusIn] = focusin,
 	[KeyPress] = keypress,
@@ -659,6 +659,18 @@ clientmessage(XEvent *e)
 	} else if (cme->message_type == netatom[NetActiveWindow]) {
 		if (c != selmon->sel && !c->isurgent)
 			seturgent(c, 1);
+    // 支持窗口跳转
+    // 如当前监视器非选择的监视器，跳到选择的监视器
+    if (c->mon != selmon) {
+      focusmon(&(Arg) { .i = +1 });
+    }
+    // 如当前tag非选择的tag，跳到选择的tag
+    if (!ISVISIBLE(c)) {
+      view(&(Arg) { .ui = c->tags });
+      focus(c);
+    }
+    // 将选择的窗口置顶
+    XRaiseWindow(dpy, c->win);
 	}
 }
 
