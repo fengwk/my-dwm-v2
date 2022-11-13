@@ -2226,7 +2226,7 @@ togglebar(const Arg *arg)
 	if (showsystray) {
 		XWindowChanges wc;
 		if (!selmon->showbar)
-			wc.y = -bh;
+			wc.y = selmon->topbar ? -bh : (selmon->wh + bh);
 		else if (selmon->showbar) {
 			wc.y = 0;
 			if (!selmon->topbar)
@@ -2400,8 +2400,8 @@ updatebarpos(Monitor *m)
 		m->wh -= bh;
 		m->by = m->topbar ? m->wy : m->wy + m->wh;
 		m->wy = m->topbar ? m->wy + bh : m->wy;
-	} else
-		m->by = -bh;
+	} else 
+		m->by = m->topbar ? -bh : (m->wh + bh);
 }
 
 void
