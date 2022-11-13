@@ -50,7 +50,7 @@
 #define CLEANMASK(mask)         (mask & ~(numlockmask|LockMask) & (ShiftMask|ControlMask|Mod1Mask|Mod2Mask|Mod3Mask|Mod4Mask|Mod5Mask))
 #define INTERSECT(x,y,w,h,m)    (MAX(0, MIN((x)+(w),(m)->wx+(m)->ww) - MAX((x),(m)->wx)) \
                                * MAX(0, MIN((y)+(h),(m)->wy+(m)->wh) - MAX((y),(m)->wy)))
-#define ISVISIBLE(C)            ((C->tags & C->mon->tagset[C->mon->seltags]))
+#define ISVISIBLE(C)            ((C->mon->isoverview || C->tags & C->mon->tagset[C->mon->seltags]))
 #define LENGTH(X)               (sizeof X / sizeof X[0])
 #define MOUSEMASK               (BUTTONMASK|PointerMotionMask)
 #define WIDTH(X)                ((X)->w + 2 * (X)->bw)
@@ -158,6 +158,7 @@ struct Monitor {
 	Window barwin;
 	const Layout *lt[2];
 	Pertag *pertag;
+  int isoverview; // 是否为预览模式
 };
 
 typedef struct {
@@ -270,6 +271,7 @@ static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
 static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
+static void toggleoverview(const Arg *arg);
 static void unfocus(Client *c, int setfocus);
 static void unmanage(Client *c, int destroyed);
 static void unmapnotify(XEvent *e);
@@ -479,9 +481,15 @@ arrange(Monitor *m)
 void
 arrangemon(Monitor *m)
 {
-	strncpy(m->ltsymbol, m->lt[m->sellt]->symbol, sizeof m->ltsymbol);
-	if (m->lt[m->sellt]->arrange)
-		m->lt[m->sellt]->arrange(m);
+  if (m->isoverview) {
+    // 如果是overview模式则使用网格布局查看
+    strncpy(m->ltsymbol, m->lt[m->sellt]->symbol, sizeof m->ltsymbol);
+    grid(m);
+  } else {
+    strncpy(m->ltsymbol, m->lt[m->sellt]->symbol, sizeof m->ltsymbol);
+    if (m->lt[m->sellt]->arrange)
+      m->lt[m->sellt]->arrange(m);
+  }
 }
 
  void
@@ -509,7 +517,7 @@ attachstack(Client *c)
 
 int isappend(Client *c) {
   Monitor *m = c->mon;
-  return m && m->lt[m->sellt] && m->lt[m->sellt]->append;
+  return (selmon && selmon->isoverview) || (m && m->lt[m->sellt] && m->lt[m->sellt]->append);
 }
 
 void
@@ -814,6 +822,7 @@ createmon(void)
 	strncpy(m->ltsymbol, layouts[0].symbol, sizeof m->ltsymbol);
 	m->pertag = ecalloc(1, sizeof(Pertag));
 	m->pertag->curtag = m->pertag->prevtag = 1;
+  m->isoverview = 0;
 
 	for (i = 0; i <= LENGTH(tags); i++) {
 		m->pertag->nmasters[i] = m->nmaster;
@@ -910,15 +919,22 @@ drawbar(Monitor *m)
 			urg |= c->tags;
 	}
 	x = 0;
-	for (i = 0; i < LENGTH(tags); i++) {
-		/* Do not draw vacant tags */
-		if(!(occ & 1 << i || m->tagset[m->seltags] & 1 << i))
-			continue;
-		w = TEXTW(tags[i]);
-		drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
-		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
-		x += w;
-	}
+  if (m->isoverview) {
+      w = TEXTW(overviewtag);
+      drw_setscheme(drw, scheme[SchemeSel]);
+      drw_text(drw, x, 0, w, bh, lrpad / 2, overviewtag, 0);
+      x += w;
+  } else {
+    for (i = 0; i < LENGTH(tags); i++) {
+      /* Do not draw vacant tags */
+      if(!(occ & 1 << i || m->tagset[m->seltags] & 1 << i))
+        continue;
+      w = TEXTW(tags[i]);
+      drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
+      drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
+      x += w;
+    }
+  }
 	w = TEXTW(m->ltsymbol);
 	drw_setscheme(drw, scheme[SchemeNorm]);
 	x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
@@ -2457,6 +2473,19 @@ toggleview(const Arg *arg)
 	}
 }
 
+// 显示所有tag 或 跳转到聚焦窗口的tag
+void
+toggleoverview(const Arg *arg)
+{
+    if (selmon->sel && selmon->sel->isfullscreen) /* no support for fullscreen windows */
+        return;
+
+    uint target = selmon->sel ? selmon->sel->tags : selmon->seltags;
+    selmon->isoverview ^= 1;
+    view(&(Arg){ .ui = target });
+    focus(selmon->sel);
+}
+
 void
 unfocus(Client *c, int setfocus)
 {
@@ -2880,8 +2909,10 @@ view(const Arg *arg)
 	int i;
 	unsigned int tmptag;
 
-	if ((arg->ui & TAGMASK) == selmon->tagset[selmon->seltags])
+	if ((arg->ui & TAGMASK) == selmon->tagset[selmon->seltags]) {
+    arrange(selmon); // overview是需触发渲染
 		return;
+  }
 	selmon->seltags ^= 1; /* toggle sel tagset */
 	if (arg->ui & TAGMASK) {
 		selmon->tagset[selmon->seltags] = arg->ui & TAGMASK;

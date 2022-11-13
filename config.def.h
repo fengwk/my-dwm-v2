@@ -53,6 +53,9 @@ static const Rule rules[] = {
 	{ "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1 },
 };
 
+// overview
+static const char *overviewtag = "OVERVIEW";
+
 /* layout(s) */
 static const float mfact     = 0.55; /* factor of master area size [0.05..0.95] */
 static const int nmaster     = 1;    /* number of clients in master area */
@@ -119,6 +122,7 @@ static const Key keys[] = {
 	// { MODKEY|ShiftMask,             XK_o,      incrovgaps,     {.i = -1 } }, // 缩小水平外侧间隙
 	{ MODKEY,                       XK_Return, zoom,           {0} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },
+	{ MODKEY,                       XK_w,      toggleoverview, {0} },
 	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
 	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
 	{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[1]} },
