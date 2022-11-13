@@ -130,6 +130,7 @@ typedef struct {
 typedef struct {
 	const char *symbol;
 	void (*arrange)(Monitor *);
+  const int append; // 是否以追加形式新增client
 } Layout;
 
 typedef struct Pertag Pertag;
@@ -180,7 +181,9 @@ static int applysizehints(Client *c, int *x, int *y, int *w, int *h, int interac
 static void arrange(Monitor *m);
 static void arrangemon(Monitor *m);
 static void attach(Client *c);
+static void attachbottom(Client *c);
 static void attachstack(Client *c);
+static int isappend(Client *c);
 static void buttonpress(XEvent *e);
 static void checkotherwm(void);
 static void cleanup(void);
@@ -238,6 +241,8 @@ static void sendmon(Client *c, Monitor *m);
 static void setclientstate(Client *c, long state);
 static void setfocus(Client *c);
 static void setfullscreen(Client *c, int fullscreen);
+static void getgaps(Monitor *m, int *oh, int *ov, int *ih, int *iv, unsigned int *nc);
+static void getfacts(Monitor *m, int msize, int ssize, float *mf, float *sf, int *mr, int *sr);
 static void setgaps(int oh, int ov, int ih, int iv);
 static void incrgaps(const Arg *arg);
 static void incrigaps(const Arg *arg);
@@ -260,6 +265,7 @@ static Monitor *systraytomon(Monitor *m);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
+static void grid(Monitor *m);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
 static void toggletag(const Arg *arg);
@@ -478,11 +484,20 @@ arrangemon(Monitor *m)
 		m->lt[m->sellt]->arrange(m);
 }
 
+ void
+attachbottom(Client *c)
+{
+	Client **tc;
+	c->next = NULL;
+	for (tc = &c->mon->clients; *tc; tc = &(*tc)->next);
+	*tc = c;
+}
+
 void
 attach(Client *c)
 {
-	c->next = c->mon->clients;
-	c->mon->clients = c;
+  c->next = c->mon->clients;
+  c->mon->clients = c;
 }
 
 void
@@ -490,6 +505,11 @@ attachstack(Client *c)
 {
 	c->snext = c->mon->stack;
 	c->mon->stack = c;
+}
+
+int isappend(Client *c) {
+  Monitor *m = c->mon;
+  return m && m->lt[m->sellt] && m->lt[m->sellt]->append;
 }
 
 void
@@ -1290,7 +1310,11 @@ manage(Window w, XWindowAttributes *wa)
 		c->isfloating = c->oldstate = trans != None || c->isfixed;
 	if (c->isfloating)
 		XRaiseWindow(dpy, c->win);
-	attach(c);
+  if (isappend(c)) {
+    attachbottom(c);
+  } else {
+    attach(c);
+  }
 	attachstack(c);
 	XChangeProperty(dpy, root, netatom[NetClientList], XA_WINDOW, 32, PropModeAppend,
 		(unsigned char *) &(c->win), 1);
@@ -1424,6 +1448,9 @@ movemouse(const Arg *arg)
 	}
 }
 
+/**
+ * 从客户端链表中找到下一个不是浮动且可见的client实例
+ */
 Client *
 nexttiled(Client *c)
 {
@@ -1776,7 +1803,11 @@ sendmon(Client *c, Monitor *m)
 	detachstack(c);
 	c->mon = m;
 	c->tags = m->tagset[m->seltags]; /* assign tags of target monitor */
-	attach(c);
+  if (isappend(c)) {
+    attachbottom(c);
+  } else {
+    attach(c);
+  }
 	attachstack(c);
 	focus(NULL);
 	arrange(NULL);
@@ -1864,6 +1895,53 @@ setfullscreen(Client *c, int fullscreen)
 		resizeclient(c, c->x, c->y, c->w, c->h);
 		arrange(c->mon);
 	}
+}
+
+void
+getgaps(Monitor *m, int *oh, int *ov, int *ih, int *iv, unsigned int *nc)
+{
+	unsigned int n, oe, ie;
+	#if PERTAG_PATCH
+	oe = ie = selmon->pertag->enablegaps[selmon->pertag->curtag];
+	#else
+	oe = ie = enablegaps;
+	#endif // PERTAG_PATCH
+	Client *c;
+
+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
+	if (smartgaps && n == 1) {
+		oe = 0; // outer gaps disabled when only one client
+	}
+
+	*oh = m->gappoh*oe; // outer horizontal gap
+	*ov = m->gappov*oe; // outer vertical gap
+	*ih = m->gappih*ie; // inner horizontal gap
+	*iv = m->gappiv*ie; // inner vertical gap
+	*nc = n;            // number of clients
+}
+
+void
+getfacts(Monitor *m, int msize, int ssize, float *mf, float *sf, int *mr, int *sr)
+{
+	unsigned int n;
+	float mfacts, sfacts;
+	int mtotal = 0, stotal = 0;
+	Client *c;
+
+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
+	mfacts = MIN(n, m->nmaster);
+	sfacts = n - m->nmaster;
+
+	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++)
+		if (n < m->nmaster)
+			mtotal += msize / mfacts;
+		else
+			stotal += ssize / sfacts;
+
+	*mf = mfacts; // total factor of master area
+	*sf = sfacts; // total factor of stack area
+	*mr = msize - mtotal; // the remainder (rest) of pixels after an even master split
+	*sr = ssize - stotal; // the remainder (rest) of pixels after an even stack split
 }
 
 void
@@ -2186,37 +2264,102 @@ tagmon(const Arg *arg)
 	sendmon(selmon->sel, dirtomon(arg->i));
 }
 
+/**
+ * 网格布局
+ */
 void
+grid(Monitor *m) {
+  unsigned int i, n;
+  unsigned int cx, cy, cw, ch;
+  unsigned int dx;
+  unsigned int cols, rows, overcols;
+  Client *c;
+
+	int oh, ov, ih, iv; // o-外侧 i-内侧 v-垂直 h-水平
+	getgaps(m, &oh, &ov, &ih, &iv, &n);
+
+  if (n == 0)
+          return;
+  if (n == 1) {
+          c = nexttiled(m->clients);
+          cw = (m->ww - 2 * ov) * 0.7;
+          ch = (m->wh - 2 * oh) * 0.65;
+          resize(c, m->mx + (m->mw - cw) / 2 + ov,
+                 m->my + (m->mh - ch) / 2 + oh, cw - 2 * c->bw,
+                 ch - 2 * c->bw, 0);
+          return;
+  }
+  if (n == 2) {
+          c = nexttiled(m->clients);
+          cw = (m->ww - 2 * ov - iv) / 2;
+          ch = (m->wh - 2 * oh) * 0.65;
+          resize(c, m->mx + ov, m->my + (m->mh - ch) / 2 + oh,
+                 cw - 2 * c->bw, ch - 2 * c->bw, 0);
+          resize(nexttiled(c->next), m->mx + cw + ov + iv,
+                 m->my + (m->mh - ch) / 2 + oh, cw - 2 * c->bw,
+                 ch - 2 * c->bw, 0);
+          return;
+  }
+
+  for (cols = 0; cols <= n / 2; cols++)
+          if (cols * cols >= n)
+                  break;
+  rows = (cols && (cols - 1) * cols >= n) ? cols - 1 : cols;
+  ch = (m->wh - 2 * oh - (rows - 1) * ih) / rows;
+  cw = (m->ww - 2 * ov - (cols - 1) * iv) / cols;
+
+  overcols = n % cols;
+  if (overcols)
+          dx = (m->ww - overcols * cw - (overcols - 1) * iv) / 2 - ov;
+  for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++) {
+          cx = m->wx + (i % cols) * (cw + iv);
+          cy = m->wy + (i / cols) * (ch + ih);
+          if (overcols && i >= n - overcols) {
+                  cx += dx;
+          }
+          resize(c, cx + ov, cy + oh, cw - 2 * c->bw, ch - 2 * c->bw, 0);
+  }
+}
+
+/*
+ * Default tile layout + gaps
+ */
+static void
 tile(Monitor *m)
 {
-	unsigned int i, n, h, r, oe = enablegaps, ie = enablegaps, mw, my, ty;
+	unsigned int i, n;
+	int oh, ov, ih, iv;
+	int mx = 0, my = 0, mh = 0, mw = 0;
+	int sx = 0, sy = 0, sh = 0, sw = 0;
+	float mfacts, sfacts;
+	int mrest, srest;
 	Client *c;
 
-	for (n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++);
+	getgaps(m, &oh, &ov, &ih, &iv, &n);
 	if (n == 0)
 		return;
 
-	if (smartgaps == n) {
-		oe = 0; // outer gaps disabled
+	sx = mx = m->wx + ov;
+	sy = my = m->wy + oh;
+	mh = m->wh - 2*oh - ih * (MIN(n, m->nmaster) - 1);
+	sh = m->wh - 2*oh - ih * (n - m->nmaster - 1);
+	sw = mw = m->ww - 2*ov;
+
+	if (m->nmaster && n > m->nmaster) {
+		sw = (mw - iv) * (1 - m->mfact);
+		mw = mw - iv - sw;
+		sx = mx + mw + iv;
 	}
 
-	if (n > m->nmaster)
-		mw = m->nmaster ? (m->ww + m->gappiv*ie) * m->mfact : 0;
-	else
-		mw = m->ww - 2*m->gappov*oe + m->gappiv*ie;
-	for (i = 0, my = ty = m->gappoh*oe, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
+	getfacts(m, mh, sh, &mfacts, &sfacts, &mrest, &srest);
+
+	for (i = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
 		if (i < m->nmaster) {
-			r = MIN(n, m->nmaster) - i;
-			h = (m->wh - my - m->gappoh*oe - m->gappih*ie * (r - 1)) / r;
-			resize(c, m->wx + m->gappov*oe, m->wy + my, mw - (2*c->bw) - m->gappiv*ie, h - (2*c->bw), 0);
-			if (my + HEIGHT(c) + m->gappih*ie < m->wh)
-			my += HEIGHT(c) + m->gappih*ie;
+			resize(c, mx, my, mw - (2*c->bw), (mh / mfacts) + (i < mrest ? 1 : 0) - (2*c->bw), 0);
+			my += HEIGHT(c) + ih;
 		} else {
-			r = n - i;
-			h = (m->wh - ty - m->gappoh*oe - m->gappih*ie * (r - 1)) / r;
-			resize(c, m->wx + mw + m->gappov*oe, m->wy + ty, m->ww - mw - (2*c->bw) - 2*m->gappov*oe, h - (2*c->bw), 0);
-			if (ty + HEIGHT(c) + m->gappih*ie < m->wh)
-				ty += HEIGHT(c) + m->gappih*ie;
+			resize(c, sx, sy, sw - (2*c->bw), (sh / sfacts) + ((i - m->nmaster) < srest ? 1 : 0) - (2*c->bw), 0);
+			sy += HEIGHT(c) + ih;
 		}
 }
 
@@ -2903,8 +3046,10 @@ zoom(const Arg *arg)
 {
 	Client *c = selmon->sel;
 
+  // 选中监视器当前无布局，或者当前客户端是浮动的，则不执行zoom
 	if (!selmon->lt[selmon->sellt]->arrange || !c || c->isfloating)
 		return;
+  // c是选中监视器的首个客户端，并且没有第二个客户端则返回
 	if (c == nexttiled(selmon->clients) && !(c = nexttiled(c->next)))
 		return;
 	pop(c);
