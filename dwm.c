@@ -3129,9 +3129,6 @@ movewin(const Arg *arg)
 {
     Client *c;
     int nx, ny;
-    unsigned int n;
-    int oh, ov, ih, iv;
-    getgaps(selmon, &oh, &ov, &ih, &iv, &n);
 
     c = selmon->sel;
     if (!c || c->isfullscreen)
@@ -3143,19 +3140,19 @@ movewin(const Arg *arg)
     switch (arg->ui) {
         case UP:
             ny -= c->mon->wh / 4;
-            ny = MAX(ny, c->mon->wy + oh);
+            ny = MAX(ny, c->mon->wy);
             break;
         case DOWN:
             ny += c->mon->wh / 4;
-            ny = MIN(ny, c->mon->wy + c->mon->wh - oh - HEIGHT(c));
+            ny = MIN(ny, c->mon->wy + c->mon->wh - HEIGHT(c));
             break;
         case LEFT:
             nx -= c->mon->ww / 4;
-            nx = MAX(nx, c->mon->wx + ov);
+            nx = MAX(nx, c->mon->wx);
             break;
         case RIGHT:
             nx += c->mon->ww / 4;
-            nx = MIN(nx, c->mon->wx + c->mon->ww - ov - WIDTH(c));
+            nx = MIN(nx, c->mon->wx + c->mon->ww - WIDTH(c));
             break;
     }
     resize(c, nx, ny, c->w, c->h, 1);
@@ -3167,9 +3164,6 @@ resizewin(const Arg *arg)
 {
     Client *c;
     int nh, nw;
-    unsigned int n;
-    int oh, ov, ih, iv;
-    getgaps(selmon, &oh, &ov, &ih, &iv, &n);
 
     c = selmon->sel;
     if (!c || c->isfullscreen)
@@ -3194,10 +3188,10 @@ resizewin(const Arg *arg)
     }
     nw = MAX(nw, selmon->ww / 10);
     nh = MAX(nh, selmon->wh / 10);
-    if (c->x + nw + ov + 2 * c->bw > selmon->wx + selmon->ww)
-        nw = selmon->wx + selmon->ww - c->x - ov - 2 * c->bw;
-    if (c->y + nh + oh + 2 * c->bw > selmon->wy + selmon->wh)
-        nh = selmon->wy + selmon->wh - c->y - oh - 2 * c->bw;
+    if (c->x + nw + 2 * c->bw > selmon->wx + selmon->ww)
+        nw = selmon->wx + selmon->ww - c->x - 2 * c->bw;
+    if (c->y + nh + 2 * c->bw > selmon->wy + selmon->wh)
+        nh = selmon->wy + selmon->wh - c->y - 2 * c->bw;
     resize(c, c->x, c->y, nw, nh, 1);
     focus(c);
     XWarpPointer(dpy, None, root, 0, 0, 0, 0, c->x + c->w - 2 * c->bw, c->y + c->h - 2 * c->bw);
