@@ -47,8 +47,8 @@ static const Rule rules[] = {
 	/* class            instance    title    tags mask    isfloating    monitor */
 	{ "jetbrains-idea", NULL,       NULL,    0,           0,            -1 },
 	{ "Peek",           NULL,       NULL,    0,           1,            -1 },
-  { "popo",           NULL,       NULL,    0,           1,            -1 },
-	{ "wechat.exe",     NULL,       NULL,    0,           1,            -1 },
+  // { "popo",           NULL,       NULL,    0,           1,            -1 },
+  // { "wechat.exe",     NULL,       NULL,    0,           1,            -1 },
 	{ "feh",            NULL,       NULL,    0,           1,            -1 },
 	{ "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1 },
 };
@@ -84,14 +84,15 @@ static const Layout layouts[] = {
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
-static const char *termcmd[]  = { "st", NULL };
-// static const char *termcmd[]  = { "alacritty", NULL };
+// static const char *termcmd[]  = { "st", NULL };
+static const char *termcmd[]  = { "alacritty", NULL };
 static const char *flameshotcmd[] = { "flameshot", "gui", NULL };
 static const char *rofi_win[] = { "rofi", "-show", "window", NULL };
 static const char *rofi_run[] = { "rofi", "-show", "run", NULL };
 static const char *rofi_drun[] = { "rofi", "-show", "drun", NULL };
 static const char scratchpadname[] = "scratchpad";
-static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
+// static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
+static const char *scratchpadcmd[] = { "alacritty", "-t", scratchpadname, NULL };
 
 /* 
  * xev命令可以获取keycode
@@ -102,13 +103,13 @@ static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34
  */
 static const Key keys[] = {
 	/* modifier                     key        function        argument */
-	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
+	// { MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
 	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
   { MODKEY,                       XK_Print,  spawn,          {.v = flameshotcmd } },
 	{ MODKEY,                       XK_grave,  togglescratch,  {.v = scratchpadcmd } },
-  // { MODKEY,                       XK_w,      spawn,          {.v = rofi_win } },
-  // { MODKEY,                       XK_p,      spawn,          {.v = rofi_run } },
-  // { MODKEY|ShiftMask,             XK_p,      spawn,          {.v = rofi_drun } },
+  { MODKEY,                       XK_w,      spawn,          {.v = rofi_win } },
+  { MODKEY,                       XK_p,      spawn,          {.v = rofi_run } },
+  { MODKEY|ShiftMask,             XK_p,      spawn,          {.v = rofi_drun } },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
@@ -143,7 +144,7 @@ static const Key keys[] = {
   { Mod1Mask|Mod4Mask,            XK_Left,   resizewin,      {.ui = H_REDUCE} }, // 水平减少窗口大小
   { Mod1Mask|Mod4Mask,            XK_Right,  resizewin,      {.ui = H_EXPAND} }, // 水平增加窗口大小
 	{ MODKEY,                       XK_Tab,    view,           {0} },
-	{ MODKEY,                       XK_w,      toggleoverview, {0} },
+	{ Mod4Mask,                     XK_w,      toggleoverview, {0} },
 	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
 	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
 	{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[1]} },
