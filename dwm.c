@@ -3140,19 +3140,19 @@ movewin(const Arg *arg)
     switch (arg->ui) {
         case UP:
             ny -= c->mon->wh / 4;
-            ny = MAX(ny, c->mon->wy);
+            ny = MAX(ny, c->mon->wy - HEIGHT(c) * 0.9);
             break;
         case DOWN:
             ny += c->mon->wh / 4;
-            ny = MIN(ny, c->mon->wy + c->mon->wh - HEIGHT(c));
+            ny = MIN(ny, c->mon->wy + c->mon->wh - HEIGHT(c) * 0.1);
             break;
         case LEFT:
             nx -= c->mon->ww / 4;
-            nx = MAX(nx, c->mon->wx);
+            nx = MAX(nx, c->mon->wx - WIDTH(c) * 0.9);
             break;
         case RIGHT:
             nx += c->mon->ww / 4;
-            nx = MIN(nx, c->mon->wx + c->mon->ww - WIDTH(c));
+            nx = MIN(nx, c->mon->wx + c->mon->ww - WIDTH(c) * 0.1);
             break;
     }
     resize(c, nx, ny, c->w, c->h, 1);
