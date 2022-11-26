@@ -14,6 +14,10 @@ static const unsigned int gappiv    = 10;       /* vert inner gap between window
 static const unsigned int gappoh    = 10;       /* horiz outer gap between windows and screen edge */
 static const unsigned int gappov    = 10;       /* vert outer gap between windows and screen edge */
 static const int smartgaps          = 1;        /* 1 means no outer gap when there is only one window */
+static const int movewinthresholdv  = 4; /* 垂直：这个阈值越大movewin操作改变的范围越小 */
+static const int movewinthresholdh  = 8; /* 水平：这个阈值越大movewin操作改变的范围越小 */
+static const int resizewinthresholdv= 10; /* 垂直：这个阈值越大resizewin操作改变的范围越小 */
+static const int resizewinthresholdh= 20; /* 水平：这个阈值越大resizewin操作改变的范围越小 */
 static const char *fonts[]          = { "SauceCodePro Nerd Font Mono:pixelsize=32" };
 static const char dmenufont[]       = "SauceCodePro Nerd Font Mono:pixelsize=32";
 static const char col_gray1[]       = "#222222";
@@ -47,8 +51,8 @@ static const Rule rules[] = {
 	/* class            instance    title    tags mask    isfloating    monitor */
 	{ "jetbrains-idea", NULL,       NULL,    0,           0,            -1 },
 	{ "Peek",           NULL,       NULL,    0,           1,            -1 },
-  // { "popo",           NULL,       NULL,    0,           1,            -1 },
-  // { "wechat.exe",     NULL,       NULL,    0,           1,            -1 },
+  { "popo",           NULL,       NULL,    0,           1,            -1 },
+  { "wechat.exe",     NULL,       NULL,    0,           1,            -1 },
 	{ "feh",            NULL,       NULL,    0,           1,            -1 },
 	{ "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1 },
 };
@@ -65,9 +69,9 @@ static const int lockfullscreen = 1; /* 1 will force focus on the fullscreen win
 static const Layout layouts[] = {
 	/* symbol     arrange function    append */
 	{ "[]=",      tile,               0 },    /* first entry is default */
+	{ "[M]",      monocle,            0 },    /* 单个窗口铺满屏幕 */
+  { "###",      grid,               1 },    /* 垂直网格布局 */
 	{ "><>",      NULL,               0 },    /* no layout function means floating behavior */
-	{ "[M]",      monocle,            0 },
-  { "###",      grid,          1 }, // 垂直网格布局
 };
 
 /* key definitions */
@@ -134,22 +138,26 @@ static const Key keys[] = {
 	// { MODKEY|ShiftMask,             XK_y,      incrovgaps,     {.i = +1 } }, // 增大水平外侧间隙
 	// { MODKEY|ShiftMask,             XK_o,      incrovgaps,     {.i = -1 } }, // 缩小水平外侧间隙
 	{ MODKEY,                       XK_Return, zoom,           {0} },
-  { Mod4Mask,                     XK_Up,     movewin,        {.ui = UP} }, // 向上移动窗口
-  { Mod4Mask,                     XK_Down,   movewin,        {.ui = DOWN} }, // 向下移动窗口
-  { Mod4Mask,                     XK_Left,   movewin,        {.ui = LEFT} }, // 向左移动窗口
-  { Mod4Mask,                     XK_Right,  movewin,        {.ui = RIGHT} }, // 向右移动窗口
-	{ Mod4Mask,                     XK_f,      togglefloating, {0} }, // 窗口浮动开关
-  { Mod1Mask|Mod4Mask,            XK_Up,     resizewin,      {.ui = V_REDUCE} }, // 垂直减少窗口大小
-  { Mod1Mask|Mod4Mask,            XK_Down,   resizewin,      {.ui = V_EXPAND} }, // 垂直增加窗口大小
-  { Mod1Mask|Mod4Mask,            XK_Left,   resizewin,      {.ui = H_REDUCE} }, // 水平减少窗口大小
-  { Mod1Mask|Mod4Mask,            XK_Right,  resizewin,      {.ui = H_EXPAND} }, // 水平增加窗口大小
+  // { Mod4Mask,                     XK_Up,     movewin,        {.ui = UP} }, // 向上移动窗口
+  // { Mod4Mask,                     XK_Down,   movewin,        {.ui = DOWN} }, // 向下移动窗口
+  // { Mod4Mask,                     XK_Left,   movewin,        {.ui = LEFT} }, // 向左移动窗口
+  // { Mod4Mask,                     XK_Right,  movewin,        {.ui = RIGHT} }, // 向右移动窗口
+  { Mod4Mask,                     XK_k,      movewin,        {.ui = UP} },    // 向上移动窗口
+  { Mod4Mask,                     XK_j,      movewin,        {.ui = DOWN} },  // 向下移动窗口
+  { Mod4Mask,                     XK_h,      movewin,        {.ui = LEFT} },  // 向左移动窗口
+  { Mod4Mask,                     XK_l,      movewin,        {.ui = RIGHT} }, // 向右移动窗口
+  { Mod4Mask,                     XK_f,      togglefloating, {0} }, // 窗口浮动开关
+  { Mod1Mask|Mod4Mask,            XK_k,      resizewin,      {.ui = V_REDUCE} }, // 垂直减少窗口大小
+  { Mod1Mask|Mod4Mask,            XK_j,      resizewin,      {.ui = V_EXPAND} }, // 垂直增加窗口大小
+  { Mod1Mask|Mod4Mask,            XK_h,      resizewin,      {.ui = H_REDUCE} }, // 水平减少窗口大小
+  { Mod1Mask|Mod4Mask,            XK_l,      resizewin,      {.ui = H_EXPAND} }, // 水平增加窗口大小
 	{ MODKEY,                       XK_Tab,    view,           {0} },
 	{ Mod4Mask,                     XK_w,      toggleoverview, {0} },
 	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
 	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
-	{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[1]} },
-	{ MODKEY,                       XK_m,      setlayout,      {.v = &layouts[2]} },
-	{ MODKEY,                       XK_g,      setlayout,      {.v = &layouts[3]} },
+	{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[3]} },
+	{ MODKEY,                       XK_m,      setlayout,      {.v = &layouts[1]} },
+	{ MODKEY,                       XK_g,      setlayout,      {.v = &layouts[2]} },
 	{ MODKEY,                       XK_space,  setlayout,      {0} },
 	// { MODKEY|ShiftMask,             XK_space,  togglefloating, {0} }, // 窗口浮动开关
 	{ MODKEY,                       XK_0,      view,           {.ui = ~0 } },

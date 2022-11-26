@@ -705,7 +705,7 @@ clientmessage(XEvent *e)
       focus(c);
     }
     // 将选择的窗口置顶
-    XRaiseWindow(dpy, c->win);
+    // XRaiseWindow(dpy, c->win);
 	}
 }
 
@@ -2316,6 +2316,8 @@ grid(Monitor *m) {
           c = nexttiled(m->clients);
           cw = (m->ww - 2 * ov) * 0.7;
           ch = (m->wh - 2 * oh) * 0.65;
+          // cw = (m->ww - 2 * ov) * 0.95;
+          // ch = (m->wh - 2 * oh) * 0.95;
           resize(c, m->mx + (m->mw - cw) / 2 + ov,
                  m->my + (m->mh - ch) / 2 + oh, cw - 2 * c->bw,
                  ch - 2 * c->bw, 0);
@@ -3139,19 +3141,19 @@ movewin(const Arg *arg)
     ny = c->y;
     switch (arg->ui) {
         case UP:
-            ny -= c->mon->wh / 4;
+            ny -= c->mon->wh / movewinthresholdv;
             ny = MAX(ny, c->mon->wy - HEIGHT(c) * 0.9);
             break;
         case DOWN:
-            ny += c->mon->wh / 4;
+            ny += c->mon->wh / movewinthresholdv;
             ny = MIN(ny, c->mon->wy + c->mon->wh - HEIGHT(c) * 0.1);
             break;
         case LEFT:
-            nx -= c->mon->ww / 4;
+            nx -= c->mon->ww / movewinthresholdh;
             nx = MAX(nx, c->mon->wx - WIDTH(c) * 0.9);
             break;
         case RIGHT:
-            nx += c->mon->ww / 4;
+            nx += c->mon->ww / movewinthresholdh;
             nx = MIN(nx, c->mon->wx + c->mon->ww - WIDTH(c) * 0.1);
             break;
     }
@@ -3174,20 +3176,20 @@ resizewin(const Arg *arg)
     nh = c->h;
     switch (arg->ui) {
         case H_EXPAND:
-            nw += selmon->wh / 10;
+            nw += selmon->wh / resizewinthresholdv;
             break;
         case H_REDUCE:
-            nw -= selmon->wh / 10;
+            nw -= selmon->wh / resizewinthresholdv;
             break;
         case V_EXPAND:
-            nh += selmon->ww / 10;
+            nh += selmon->ww / resizewinthresholdh;
             break;
         case V_REDUCE:
-            nh -= selmon->ww / 10;
+            nh -= selmon->ww / resizewinthresholdh;
             break;
     }
-    nw = MAX(nw, selmon->ww / 10);
-    nh = MAX(nh, selmon->wh / 10);
+    nw = MAX(nw, selmon->ww / resizewinthresholdv);
+    nh = MAX(nh, selmon->wh / resizewinthresholdh);
     if (c->x + nw + 2 * c->bw > selmon->wx + selmon->ww)
         nw = selmon->wx + selmon->ww - c->x - 2 * c->bw;
     if (c->y + nh + 2 * c->bw > selmon->wy + selmon->wh)
