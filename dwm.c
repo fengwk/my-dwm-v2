@@ -705,7 +705,7 @@ clientmessage(XEvent *e)
       focus(c);
     }
     // 将选择的窗口置顶
-    // XRaiseWindow(dpy, c->win);
+    XRaiseWindow(dpy, c->win);
 	}
 }
 
@@ -2283,7 +2283,8 @@ tag(const Arg *arg)
 {
 	if (selmon->sel && arg->ui & TAGMASK) {
 		selmon->sel->tags = arg->ui & TAGMASK;
-		focus(NULL);
+    view(arg); // 跳到新的tag
+		// focus(NULL);
 		arrange(selmon);
 	}
 }
