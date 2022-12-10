@@ -324,7 +324,7 @@ static void (*handler[LASTEvent]) (XEvent *) = {
 	[ConfigureRequest] = configurerequest,
 	[ConfigureNotify] = configurenotify,
 	[DestroyNotify] = destroynotify,
-	// [EnterNotify] = enternotify, // 注释这行可以禁止鼠标悬浮聚焦
+	[EnterNotify] = enternotify, // 注释这行可以禁止鼠标悬浮聚焦
 	[Expose] = expose,
 	[FocusIn] = focusin,
 	[KeyPress] = keypress,
@@ -2295,6 +2295,8 @@ tagmon(const Arg *arg)
 	if (!selmon->sel || !mons->next)
 		return;
 	sendmon(selmon->sel, dirtomon(arg->i));
+  // 定位到目标monitor
+  focusmon(arg);
 }
 
 /**

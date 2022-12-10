@@ -55,6 +55,7 @@ static const Rule rules[] = {
   { "wechat.exe",     NULL,       NULL,    0,           1,            -1 },
 	{ "feh",            NULL,       NULL,    0,           1,            -1 },
 	{ "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1 },
+	// { "flameshot", "flameshot", "Configuration", 0, 1, -1 },
 };
 
 // overview
