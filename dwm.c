@@ -704,8 +704,10 @@ clientmessage(XEvent *e)
       view(&(Arg) { .ui = c->tags });
       focus(c);
     }
+    // 将选中窗口推到主工作区
+    pop(c);
     // 将选择的窗口置顶
-    XRaiseWindow(dpy, c->win);
+    // XRaiseWindow(dpy, c->win);
 	}
 }
 
