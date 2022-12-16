@@ -13,7 +13,6 @@ static const unsigned int gappih    = 10;       /* horiz inner gap between windo
 static const unsigned int gappiv    = 10;       /* vert inner gap between windows */
 static const unsigned int gappoh    = 10;       /* horiz outer gap between windows and screen edge */
 static const unsigned int gappov    = 10;       /* vert outer gap between windows and screen edge */
-static const int smartgaps          = 1;        /* 1 means no outer gap when there is only one window */
 static const int movewinthresholdv  = 8; /* 垂直：这个阈值越大movewin操作改变的范围越小 */
 static const int movewinthresholdh  = 8; /* 水平：这个阈值越大movewin操作改变的范围越小 */
 static const int resizewinthresholdv= 10; /* 垂直：这个阈值越大resizewin操作改变的范围越小 */
@@ -89,15 +88,15 @@ static const Layout layouts[] = {
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
-// static const char *termcmd[]  = { "st", NULL };
-static const char *termcmd[]  = { "alacritty", NULL };
+static const char *termcmd[]  = { "st", NULL };
+// static const char *termcmd[]  = { "alacritty", NULL };
 static const char *flameshotcmd[] = { "env", "QT_AUTO_SCREEN_SCALE_FACTOR=0", "QT_SCREEN_SCALE_FACTORS=''", "flameshot", "gui", NULL };
 static const char *rofi_win[] = { "rofi", "-show", "window", NULL };
 static const char *rofi_run[] = { "rofi", "-show", "run", NULL };
 static const char *rofi_drun[] = { "rofi", "-show", "drun", NULL };
 static const char scratchpadname[] = "scratchpad";
-// static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
-static const char *scratchpadcmd[] = { "alacritty", "-t", scratchpadname, NULL };
+static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
+// static const char *scratchpadcmd[] = { "alacritty", "-t", scratchpadname, NULL };
 
 /* 
  * xev命令可以获取keycode
@@ -129,6 +128,9 @@ static const Key keys[] = {
 	// { MODKEY|Mod4Mask|ControlMask,  XK_h,      incrigaps,      {.i = +1 } },
 	// { MODKEY|Mod4Mask|ControlMask,  XK_l,      incrigaps,      {.i = -1 } },
 	{ MODKEY|Mod4Mask,              XK_0,      togglegaps,     {0} }, // 间隙开关
+	{ MODKEY|Mod4Mask|ShiftMask,    XK_0,      togglesmartgaps,{0} }, // 智能间隙开关
+	{ MODKEY|Mod4Mask,              XK_equal,  incrgaps,       {.i = +1 } },
+	{ MODKEY|Mod4Mask,              XK_minus,  incrgaps,       {.i = -1 } },
 	// { MODKEY|Mod4Mask|ShiftMask,    XK_0,      defaultgaps,    {0} }, // 重置间隙
 	// { MODKEY,                       XK_y,      incrihgaps,     {.i = +1 } }, // 增大垂直内侧间隙
 	// { MODKEY,                       XK_o,      incrihgaps,     {.i = -1 } }, // 增大垂直内侧间隙

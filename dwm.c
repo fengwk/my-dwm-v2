@@ -237,7 +237,7 @@ static void resizemouse(const Arg *arg);
 static void resizerequest(XEvent *e);
 static void restack(Monitor *m);
 static void run(void);
-static void runautostart(void);
+static void runautosh(const char autoblocksh[], const char autosh[]);
 static void scan(void);
 static int sendevent(Window w, Atom proto, int m, long d0, long d1, long d2, long d3, long d4);
 static void sendmon(Client *c, Monitor *m);
@@ -254,6 +254,7 @@ static void incrohgaps(const Arg *arg);
 static void incrovgaps(const Arg *arg);
 static void incrihgaps(const Arg *arg);
 static void incrivgaps(const Arg *arg);
+static void togglesmartgaps(const Arg *arg);
 static void togglegaps(const Arg *arg);
 static void defaultgaps(const Arg *arg);
 static void setlayout(const Arg *arg);
@@ -308,6 +309,8 @@ static Systray *systray =  NULL;
 static const char broken[] = "broken";
 static const char autostartblocksh[] = "autostart_blocking.sh"; // 这个脚本会以阻塞的形式执行
 static const char autostartsh[] = "autostart.sh"; // 这个脚本会以非阻塞形式执行，就是加了&
+static const char autostopblocksh[] = "autostop_blocking.sh"; // 这个脚本会以阻塞的形式执行
+static const char autostopsh[] = "autostop.sh"; // 这个脚本会以非阻塞形式执行，就是加了&
 static const char dwmdir[] = "dwm"; // 自启动脚本的dir名称
 static const char localshare[] = ".local/share"; // 自启动脚本的相对路径
 static char stext[256];
@@ -315,6 +318,7 @@ static int screen;
 static int sw, sh;           /* X display screen geometry width, height */
 static int bh;               /* bar height */
 static int lrpad;            /* sum of left and right padding for text */
+static int smartgaps  = 1;   /* 1 means no outer gap when there is only one window */
 static int enablegaps = 1;   /* enables gaps, used by togglegaps */
 static int (*xerrorxlib)(Display *, XErrorEvent *);
 static unsigned int numlockmask = 0;
@@ -1723,7 +1727,7 @@ run(void)
 }
 
 void
-runautostart(void)
+runautosh(const char autoblocksh[], const char autosh[])
 {
 	char *pathpfx;
 	char *path;
@@ -1777,8 +1781,8 @@ runautostart(void)
 	}
 
 	/* try the blocking script first */
-	path = ecalloc(1, strlen(pathpfx) + strlen(autostartblocksh) + 2);
-	if (sprintf(path, "%s/%s", pathpfx, autostartblocksh) <= 0) {
+	path = ecalloc(1, strlen(pathpfx) + strlen(autoblocksh) + 2);
+	if (sprintf(path, "%s/%s", pathpfx, autoblocksh) <= 0) {
 		free(path);
 		free(pathpfx);
 	}
@@ -1787,7 +1791,7 @@ runautostart(void)
 		system(path);
 
 	/* now the non-blocking script */
-	if (sprintf(path, "%s/%s", pathpfx, autostartsh) <= 0) {
+	if (sprintf(path, "%s/%s", pathpfx, autosh) <= 0) {
 		free(path);
 		free(pathpfx);
 	}
@@ -1989,6 +1993,12 @@ setgaps(int oh, int ov, int ih, int iv)
 	selmon->gappov = ov;
 	selmon->gappih = ih;
 	selmon->gappiv = iv;
+	arrange(selmon);
+}
+
+void
+togglesmartgaps(const Arg *arg) {
+  smartgaps =  !smartgaps;
 	arrange(selmon);
 }
 
@@ -2286,6 +2296,7 @@ tag(const Arg *arg)
 	if (selmon->sel && arg->ui & TAGMASK) {
 		selmon->sel->tags = arg->ui & TAGMASK;
     view(arg); // 跳到新的tag
+    pop(selmon->sel); // 将选中窗口切换到主工作区
 		// focus(NULL);
 		arrange(selmon);
 	}
@@ -3222,9 +3233,10 @@ main(int argc, char *argv[])
 		die("pledge");
 #endif /* __OpenBSD__ */
 	scan();
-	runautostart();
+  runautosh(autostartblocksh, autostartsh);
 	run();
 	cleanup();
 	XCloseDisplay(dpy);
+  runautosh(autostopblocksh, autostopsh);
 	return EXIT_SUCCESS;
 }
