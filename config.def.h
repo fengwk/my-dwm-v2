@@ -19,17 +19,27 @@ static const int resizewinthresholdv= 10; /* 垂直：这个阈值越大resizewi
 static const int resizewinthresholdh= 20; /* 水平：这个阈值越大resizewin操作改变的范围越小 */
 static const char *fonts[]          = { "SauceCodePro Nerd Font Mono:pixelsize=32" };
 static const char dmenufont[]       = "SauceCodePro Nerd Font Mono:pixelsize=32";
+// 淡雅灰配色
 static const char col_gray1[]       = "#222222";
 static const char col_gray2[]       = "#444444";
 static const char col_gray3[]       = "#bbbbbb";
 static const char col_gray4[]       = "#eeeeee";
 static const char col_cyan[]        = "#444444";
+// static const char col_sboard[]        = "#7799AA";
+static const char col_sboard[]        = "#bbbbbb";
+// 全黑配色
+// static const char col_gray1[]       = "#000000";
+// static const char col_gray2[]       = "#000000";
+// static const char col_gray3[]       = "#bbbbbb";
+// static const char col_gray4[]       = "#bbbbbb";
+// static const char col_cyan[]        = "#222222";
+// static const char col_sboard[]        = "#7799AA";
 static const unsigned int baralpha = 0xd0;
 static const unsigned int borderalpha = OPAQUE;
 static const char *colors[][3]      = {
 	/*               fg         bg         border   */
 	[SchemeNorm] = { col_gray3, col_gray1, col_gray2 },
-	[SchemeSel]  = { col_gray4, col_cyan,  "#7799AA" },
+	[SchemeSel]  = { col_gray4, col_cyan,  col_sboard },
 };
 static const unsigned int alphas[][3]      = {
 	/*               fg      bg        border     */
