@@ -50,6 +50,19 @@ static const unsigned int alphas[][3]      = {
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
+// 展示标签主客户端标题
+static const char ptagf[] = "%s %s";	/* format of a tag label */
+static const char etagf[] = "%s";	/* format of an empty tag */
+static const TagMapEntry tagnamemap[] = {
+  { "st-256color", "st" },
+  { "Google-chrome", "chrome" },
+  { "jetbrains-idea", "idea" },
+  { "code-oss", "code" },
+  { "com-xk72-charles-gui-MainWithClassLoader", "charles" },
+  { "网易POPO", "popo" },
+  { "wechat.exe", "wechat" },
+};
+
 // https://dwm.suckless.org/customisation/rules/
 // 使用xprop命令可以获取窗口信息
 static const Rule rules[] = {

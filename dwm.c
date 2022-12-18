@@ -20,6 +20,7 @@
  *
  * To understand everything else, start reading main().
  */
+#include <ctype.h> /* for making tab label lowercase, very tiny standard library */
 #include <errno.h>
 #include <locale.h>
 #include <signal.h>
@@ -178,6 +179,11 @@ struct Systray {
 	Client *icons;
 };
 
+typedef struct {
+  const char *key;
+  const char *val;
+} TagMapEntry;
+
 /* function declarations */
 static void applyrules(Client *c);
 static int applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact);
@@ -303,6 +309,7 @@ static void xinitvisual();
 static void zoom(const Arg *arg);
 static void movewin(const Arg *arg);
 static void resizewin(const Arg *arg);
+static const char* gettagdisplayname(Client* c);
 
 /* variables */
 static Systray *systray =  NULL;
@@ -366,6 +373,8 @@ struct Pertag {
 };
 
 static unsigned int scratchtag = 1 << LENGTH(tags);
+
+unsigned int tagw[LENGTH(tags)];
 
 /* compile-time check if all tags fit into an unsigned int bit array. */
 struct NumTags { char limitexceeded[LENGTH(tags) > 31 ? -1 : 1]; };
@@ -556,7 +565,7 @@ buttonpress(XEvent *e)
 			/* Do not reserve space for vacant tags */
 			if (!(occ & 1 << i || m->tagset[m->seltags] & 1 << i))
 				continue;
-			x += TEXTW(tags[i]);
+			x += tagw[i];
 		} while (ev->x >= x && ++i < LENGTH(tags));
 		if (i < LENGTH(tags)) {
 			click = ClkTagBar;
@@ -904,6 +913,22 @@ dirtomon(int dir)
 	return m;
 }
 
+// 获取用于标签的客户端名称
+const char* 
+gettagdisplayname(Client* c) {
+  XClassHint ch = { NULL, NULL };
+  XGetClassHint(dpy, c->win, &ch);
+  const char* name = ch.res_class;
+  for (int i = 0; i < LENGTH(tagnamemap); i++) {
+    if (name && strcmp(tagnamemap[i].key, name) == 0) {
+      name = tagnamemap[i].val;
+      break;
+    }
+  }
+  return name;
+  // return ch.res_name;
+}
+
 void
 drawbar(Monitor *m)
 {
@@ -912,6 +937,8 @@ drawbar(Monitor *m)
 	int boxw = drw->fonts->h / 6 + 2;
 	unsigned int i, occ = 0, urg = 0, n = 0;
 	Client *c;
+	char tagdisp[64];
+	const char *masterclientontag[LENGTH(tags)];
 
 	if(showsystray && m == systraytomon(m))
 		stw = getsystraywidth();
@@ -923,13 +950,22 @@ drawbar(Monitor *m)
 		drw_text(drw, m->ww - tw - stw, 0, tw, bh, lrpad / 2 - 2, stext, 0);
 	}
 
+  // 初始化各个标签master客户端数组
+	for (i = 0; i < LENGTH(tags); i++)
+		masterclientontag[i] = NULL;
+
 	resizebarwin(m);
 	for (c = m->clients; c; c = c->next) {
 		if (ISVISIBLE(c))
-			n++;
+			n++; // 计算可展示的客户端数量
 		occ |= c->tags;
 		if (c->isurgent)
 			urg |= c->tags;
+    // 获取master客户端的名称
+		for (i = 0; i < LENGTH(tags); i++)
+			if (!masterclientontag[i] && c->tags & (1<<i)) {
+				masterclientontag[i] = gettagdisplayname(c);
+			}
 	}
 	x = 0;
   if (m->isoverview) {
@@ -942,9 +978,14 @@ drawbar(Monitor *m)
       /* Do not draw vacant tags */
       if(!(occ & 1 << i || m->tagset[m->seltags] & 1 << i))
         continue;
-      w = TEXTW(tags[i]);
+      if (masterclientontag[i])
+        snprintf(tagdisp, 64, ptagf, tags[i], masterclientontag[i]);
+      else
+        snprintf(tagdisp, 64, etagf, tags[i]);
+      masterclientontag[i] = tagdisp;
+      tagw[i] = w = TEXTW(masterclientontag[i]);
       drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
-      drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
+      drw_text(drw, x, 0, w, bh, lrpad / 2, masterclientontag[i], urg & 1 << i);
       x += w;
     }
   }
