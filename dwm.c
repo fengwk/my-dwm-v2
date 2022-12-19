@@ -298,6 +298,8 @@ static void updatesystrayiconstate(Client *i, XPropertyEvent *ev);
 static void updatetitle(Client *c);
 static void updatewindowtype(Client *c);
 static void updatewmhints(Client *c);
+static void viewtoleft(const Arg *arg);
+static void viewtoright(const Arg *arg);
 static void view(const Arg *arg);
 static Client *wintoclient(Window w);
 static Monitor *wintomon(Window w);
@@ -567,6 +569,7 @@ buttonpress(XEvent *e)
 				continue;
 			x += tagw[i];
 		} while (ev->x >= x && ++i < LENGTH(tags));
+    // 处理bar点击事件
 		if (i < LENGTH(tags)) {
 			click = ClkTagBar;
 			arg.ui = 1 << i;
@@ -2998,6 +3001,43 @@ updatewmhints(Client *c)
 			c->neverfocus = 0;
 		XFree(wmh);
 	}
+}
+
+void
+viewtoleft(const Arg *arg) {
+    unsigned int target = selmon->tagset[selmon->seltags], pre;
+    Client *c;
+    while (1) {
+        pre = target;
+        target >>= 1;
+        if (target == pre) return;
+
+        for (c = selmon->clients; c; c = c->next) {
+            if (c->tags & target && __builtin_popcount(selmon->tagset[selmon->seltags] & TAGMASK) == 1
+                    && selmon->tagset[selmon->seltags] > 1) {
+                view(&(Arg) { .ui = target });
+                return;
+            }
+        }
+    }
+}
+
+void
+viewtoright(const Arg *arg) {
+    unsigned int target = selmon->tagset[selmon->seltags];
+    Client *c;
+    while (1) {
+        target = target == 0 ? 1 : target << 1;
+        if (!(target & TAGMASK)) return;
+
+        for (c = selmon->clients; c; c = c->next) {
+            if (c->tags & target && __builtin_popcount(selmon->tagset[selmon->seltags] & TAGMASK) == 1
+                    && selmon->tagset[selmon->seltags] & (TAGMASK >> 1)) {
+                view(&(Arg) { .ui = target });
+                return;
+            }
+        }
+    }
 }
 
 void

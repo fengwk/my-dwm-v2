@@ -54,13 +54,19 @@ static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 static const char ptagf[] = "%s %s";	/* format of a tag label */
 static const char etagf[] = "%s";	/* format of an empty tag */
 static const TagMapEntry tagnamemap[] = {
-  { "st-256color", "st" },
-  { "Google-chrome", "chrome" },
-  { "jetbrains-idea", "idea" },
-  { "code-oss", "code" },
-  { "com-xk72-charles-gui-MainWithClassLoader", "charles" },
-  { "网易POPO", "popo" },
-  { "wechat.exe", "wechat" },
+  { "st-256color", "" },
+  { "Alacritty", "" },
+  { "Google-chrome", "" },
+  { "jetbrains-idea", "" },
+  { "code-oss", "" },
+  { "com-xk72-charles-gui-MainWithClassLoader", "" },
+  { "popo", "﫢" },
+  { "wechat.exe", "" },
+  { "Optimus Manager Qt", "" },
+  { "Nm-connection-editor", "" },
+  { "Postman", "" },
+  { "XMind", "" },
+  { "Java", "" },
 };
 
 // https://dwm.suckless.org/customisation/rules/
@@ -172,11 +178,19 @@ static const Key keys[] = {
   { Mod4Mask,                     XK_j,      movewin,        {.ui = DOWN} },  // 向下移动窗口
   { Mod4Mask,                     XK_h,      movewin,        {.ui = LEFT} },  // 向左移动窗口
   { Mod4Mask,                     XK_l,      movewin,        {.ui = RIGHT} }, // 向右移动窗口
+  // { Mod4Mask,                     XK_Up,     movewin,        {.ui = UP} },    // 向上移动窗口
+  // { Mod4Mask,                     XK_Down,   movewin,        {.ui = DOWN} },  // 向下移动窗口
+  // { Mod4Mask,                     XK_Left,   movewin,        {.ui = LEFT} },  // 向左移动窗口
+  // { Mod4Mask,                     XK_Right,  movewin,        {.ui = RIGHT} }, // 向右移动窗口
   { Mod4Mask,                     XK_f,      togglefloating, {0} }, // 窗口浮动开关
   { Mod1Mask|Mod4Mask,            XK_k,      resizewin,      {.ui = V_REDUCE} }, // 垂直减少窗口大小
   { Mod1Mask|Mod4Mask,            XK_j,      resizewin,      {.ui = V_EXPAND} }, // 垂直增加窗口大小
   { Mod1Mask|Mod4Mask,            XK_h,      resizewin,      {.ui = H_REDUCE} }, // 水平减少窗口大小
   { Mod1Mask|Mod4Mask,            XK_l,      resizewin,      {.ui = H_EXPAND} }, // 水平增加窗口大小
+  // { Mod1Mask|Mod4Mask,            XK_Up,     resizewin,      {.ui = V_REDUCE} }, // 垂直减少窗口大小
+  // { Mod1Mask|Mod4Mask,            XK_Down,   resizewin,      {.ui = V_EXPAND} }, // 垂直增加窗口大小
+  // { Mod1Mask|Mod4Mask,            XK_Left,   resizewin,      {.ui = H_REDUCE} }, // 水平减少窗口大小
+  // { Mod1Mask|Mod4Mask,            XK_Right,  resizewin,      {.ui = H_EXPAND} }, // 水平增加窗口大小
 	{ MODKEY,                       XK_Tab,    view,           {0} },
 	{ Mod4Mask,                     XK_w,      toggleoverview, {0} },
 	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
@@ -192,6 +206,8 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
+	{ MODKEY|Mod4Mask,              XK_Left,   viewtoleft,     {0} },
+	{ MODKEY|Mod4Mask,              XK_Right,  viewtoright,    {0} },
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)
@@ -219,5 +235,8 @@ static const Button buttons[] = {
 	{ ClkTagBar,            0,              Button3,        toggleview,     {0} },
 	{ ClkTagBar,            MODKEY,         Button1,        tag,            {0} },
 	{ ClkTagBar,            MODKEY,         Button3,        toggletag,      {0} },
+	{ ClkTagBar,            0,              Button4,        viewtoleft,     {0} },       // 在tag栏上鼠标上滚切换到上一个tag
+	{ ClkTagBar,            0,              Button5,        viewtoright,    {0} },       // 在tag栏上鼠标上滚切换到下一个tag
+	{ ClkWinTitle,          0,              Button4,        focusstack,     {.i = -1} }, // 在标题栏上鼠标上滚切换到上一个客户端
+	{ ClkWinTitle,          0,              Button5,        focusstack,     {.i = +1} }, // 在标题栏上鼠标上滚切换到下一个客户端
 };
-
