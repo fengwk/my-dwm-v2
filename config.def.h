@@ -170,27 +170,23 @@ static const Key keys[] = {
 	// { MODKEY|ShiftMask,             XK_y,      incrovgaps,     {.i = +1 } }, // 增大水平外侧间隙
 	// { MODKEY|ShiftMask,             XK_o,      incrovgaps,     {.i = -1 } }, // 缩小水平外侧间隙
 	{ MODKEY,                       XK_Return, zoom,           {0} },
-  // { Mod4Mask,                     XK_Up,     movewin,        {.ui = UP} }, // 向上移动窗口
-  // { Mod4Mask,                     XK_Down,   movewin,        {.ui = DOWN} }, // 向下移动窗口
-  // { Mod4Mask,                     XK_Left,   movewin,        {.ui = LEFT} }, // 向左移动窗口
-  // { Mod4Mask,                     XK_Right,  movewin,        {.ui = RIGHT} }, // 向右移动窗口
-  { Mod4Mask,                     XK_k,      movewin,        {.ui = UP} },    // 向上移动窗口
-  { Mod4Mask,                     XK_j,      movewin,        {.ui = DOWN} },  // 向下移动窗口
-  { Mod4Mask,                     XK_h,      movewin,        {.ui = LEFT} },  // 向左移动窗口
-  { Mod4Mask,                     XK_l,      movewin,        {.ui = RIGHT} }, // 向右移动窗口
-  // { Mod4Mask,                     XK_Up,     movewin,        {.ui = UP} },    // 向上移动窗口
-  // { Mod4Mask,                     XK_Down,   movewin,        {.ui = DOWN} },  // 向下移动窗口
-  // { Mod4Mask,                     XK_Left,   movewin,        {.ui = LEFT} },  // 向左移动窗口
-  // { Mod4Mask,                     XK_Right,  movewin,        {.ui = RIGHT} }, // 向右移动窗口
-  { Mod4Mask,                     XK_f,      togglefloating, {0} }, // 窗口浮动开关
-  { Mod1Mask|Mod4Mask,            XK_k,      resizewin,      {.ui = V_REDUCE} }, // 垂直减少窗口大小
-  { Mod1Mask|Mod4Mask,            XK_j,      resizewin,      {.ui = V_EXPAND} }, // 垂直增加窗口大小
-  { Mod1Mask|Mod4Mask,            XK_h,      resizewin,      {.ui = H_REDUCE} }, // 水平减少窗口大小
-  { Mod1Mask|Mod4Mask,            XK_l,      resizewin,      {.ui = H_EXPAND} }, // 水平增加窗口大小
-  // { Mod1Mask|Mod4Mask,            XK_Up,     resizewin,      {.ui = V_REDUCE} }, // 垂直减少窗口大小
-  // { Mod1Mask|Mod4Mask,            XK_Down,   resizewin,      {.ui = V_EXPAND} }, // 垂直增加窗口大小
-  // { Mod1Mask|Mod4Mask,            XK_Left,   resizewin,      {.ui = H_REDUCE} }, // 水平减少窗口大小
-  // { Mod1Mask|Mod4Mask,            XK_Right,  resizewin,      {.ui = H_EXPAND} }, // 水平增加窗口大小
+  { Mod4Mask,                     XK_f,      togglefloating, {0} },              // 窗口浮动开关
+  { Mod4Mask,                     XK_Up,     movewin,        {.ui = UP} },       // 向上移动窗口
+  { Mod4Mask,                     XK_Down,   movewin,        {.ui = DOWN} },     // 向下移动窗口
+  { Mod4Mask,                     XK_Left,   movewin,        {.ui = LEFT} },     // 向左移动窗口
+  { Mod4Mask,                     XK_Right,  movewin,        {.ui = RIGHT} },    // 向右移动窗口
+  { Mod4Mask,                     XK_k,      movewin,        {.ui = UP} },       // 向上移动窗口
+  { Mod4Mask,                     XK_j,      movewin,        {.ui = DOWN} },     // 向下移动窗口
+  { Mod4Mask,                     XK_h,      movewin,        {.ui = LEFT} },     // 向左移动窗口
+  { Mod4Mask,                     XK_l,      movewin,        {.ui = RIGHT} },    // 向右移动窗口
+  { MODKEY|Mod4Mask,              XK_Up,     resizewin,      {.ui = V_REDUCE} }, // 垂直减少窗口大小
+  { MODKEY|Mod4Mask,              XK_Down,   resizewin,      {.ui = V_EXPAND} }, // 垂直增加窗口大小
+  { MODKEY|Mod4Mask,              XK_Left,   resizewin,      {.ui = H_REDUCE} }, // 水平减少窗口大小
+  { MODKEY|Mod4Mask,              XK_Right,  resizewin,      {.ui = H_EXPAND} }, // 水平增加窗口大小
+  { MODKEY|Mod4Mask,              XK_k,      resizewin,      {.ui = V_REDUCE} }, // 垂直减少窗口大小
+  { MODKEY|Mod4Mask,              XK_j,      resizewin,      {.ui = V_EXPAND} }, // 垂直增加窗口大小
+  { MODKEY|Mod4Mask,              XK_h,      resizewin,      {.ui = H_REDUCE} }, // 水平减少窗口大小
+  { MODKEY|Mod4Mask,              XK_l,      resizewin,      {.ui = H_EXPAND} }, // 水平增加窗口大小
 	{ MODKEY,                       XK_Tab,    view,           {0} },
 	{ Mod4Mask,                     XK_w,      toggleoverview, {0} },
 	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
@@ -206,8 +202,10 @@ static const Key keys[] = {
 	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
-	{ MODKEY|Mod4Mask,              XK_Left,   viewtoleft,     {0} },
-	{ MODKEY|Mod4Mask,              XK_Right,  viewtoright,    {0} },
+	{ MODKEY|ShiftMask,             XK_Left,   viewtoleft,     {0} },
+	{ MODKEY|ShiftMask,             XK_Right,  viewtoright,    {0} },
+	{ MODKEY|ShiftMask,             XK_h,      viewtoleft,     {0} },
+	{ MODKEY|ShiftMask,             XK_l,      viewtoright,    {0} },
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)
