@@ -58,6 +58,7 @@ static const TagMapEntry tagnamemap[] = {
   { "Alacritty", "" },
   { "Google-chrome", "" },
   { "jetbrains-idea", "" },
+  { "jetbrains-idea-ce", "" },
   { "code-oss", "" },
   { "com-xk72-charles-gui-MainWithClassLoader", "" },
   { "popo", "﫢" },
@@ -67,6 +68,8 @@ static const TagMapEntry tagnamemap[] = {
   { "Postman", "" },
   { "XMind", "" },
   { "Java", "" },
+  { "Eclipse", "" },
+  { "xiaoyi_assistant", "嬨" },
 };
 
 // https://dwm.suckless.org/customisation/rules/
@@ -206,6 +209,8 @@ static const Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_Right,  viewtoright,    {0} },
 	{ MODKEY|ShiftMask,             XK_h,      viewtoleft,     {0} },
 	{ MODKEY|ShiftMask,             XK_l,      viewtoright,    {0} },
+	{ MODKEY,                       XK_bracketleft, viewtoleft, {0} },
+	{ MODKEY,                       XK_bracketright, viewtoright, {0} },
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)

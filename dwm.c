@@ -274,6 +274,7 @@ static void spawn(const Arg *arg);
 static Monitor *systraytomon(Monitor *m);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
+static void pointerfocuswin(Client *c);
 static void tile(Monitor *m);
 static void grid(Monitor *m);
 static void togglebar(const Arg *arg);
@@ -718,12 +719,15 @@ clientmessage(XEvent *e)
     // 如当前tag非选择的tag，跳到选择的tag
     if (!ISVISIBLE(c)) {
       view(&(Arg) { .ui = c->tags });
-      focus(c);
+      // 将选择的窗口置顶
+      // XRaiseWindow(dpy, c->win);
     }
+    // 聚焦
+    focus(c);
     // 将选中窗口推到主工作区
     pop(c);
-    // 将选择的窗口置顶
-    // XRaiseWindow(dpy, c->win);
+    // 定位光标到相应client
+    // pointerfocuswin(c);
 	}
 }
 
@@ -929,7 +933,6 @@ gettagdisplayname(Client* c) {
     }
   }
   return name;
-  // return ch.res_name;
 }
 
 void
@@ -953,11 +956,12 @@ drawbar(Monitor *m)
 		drw_text(drw, m->ww - tw - stw, 0, tw, bh, lrpad / 2 - 2, stext, 0);
 	}
 
+	resizebarwin(m);
+
   // 初始化各个标签master客户端数组
 	for (i = 0; i < LENGTH(tags); i++)
 		masterclientontag[i] = NULL;
 
-	resizebarwin(m);
 	for (c = m->clients; c; c = c->next) {
 		if (ISVISIBLE(c))
 			n++; // 计算可展示的客户端数量
@@ -1126,6 +1130,7 @@ focusmon(const Arg *arg)
 	unfocus(selmon->sel, 0);
 	selmon = m;
 	focus(NULL);
+  pointerfocuswin(NULL);
 }
 
 void
@@ -2349,11 +2354,29 @@ tag(const Arg *arg)
 void
 tagmon(const Arg *arg)
 {
+  Client *c = selmon->sel;
 	if (!selmon->sel || !mons->next)
 		return;
-	sendmon(selmon->sel, dirtomon(arg->i));
+	sendmon(c, dirtomon(arg->i));
   // 定位到目标monitor
   focusmon(arg);
+  if (ISVISIBLE(c)) {
+    // 定位焦点到相应client
+    focus(c);
+    // 定位光标到相应client
+    pointerfocuswin(c);
+  }
+}
+
+// 光标定位
+void
+pointerfocuswin(Client *c)
+{
+    if (c) {
+        XWarpPointer(dpy, None, root, 0, 0, 0, 0, c->x + c->w / 2, c->y + c->h / 2);
+        focus(c);
+    } else
+        XWarpPointer(dpy, None, root, 0, 0, 0, 0, selmon->wx + selmon->ww / 3, selmon->wy + selmon->wh / 2);
 }
 
 /**
