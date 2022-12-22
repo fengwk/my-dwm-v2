@@ -79,13 +79,14 @@ static const Rule rules[] = {
 	 *	WM_CLASS(STRING) = instance, class
 	 *	WM_NAME(STRING) = title
 	 */
-	/* class            instance    title    tags mask    isfloating    monitor */
-	{ "jetbrains-idea", NULL,       NULL,    0,           0,            -1 },
-	{ "Peek",           NULL,       NULL,    0,           1,            -1 },
-  { "popo",           NULL,       NULL,    0,           1,            -1 },
-  { "wechat.exe",     NULL,       NULL,    0,           1,            -1 },
-	{ "feh",            NULL,       NULL,    0,           1,            -1 },
-	{ "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1 },
+	/* class            instance    title    tags mask    isfloating    monitor    ignoretransient */
+	{ "Peek",           NULL,       NULL,    0,           1,            -1,        0               },
+  { "popo",           NULL,       NULL,    0,           1,            -1,        0               },
+  { "wechat.exe",     NULL,       NULL,    0,           1,            -1,        0               },
+	{ "feh",            NULL,       NULL,    0,           1,            -1,        0               },
+	{ "jetbrains-idea", NULL,       NULL,    0,           0,            -1,        1               },
+	{ "jetbrains-idea-ce", NULL,    NULL,    0,           0,            -1,        1               },
+	{ "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1, 0 },
 	// { "flameshot", "flameshot", "Configuration", 0, 1, -1 },
 };
 
