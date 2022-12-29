@@ -70,6 +70,7 @@ static const TagMapEntry tagnamemap[] = {
   { "Java", "" },
   { "Eclipse", "" },
   { "xiaoyi_assistant", "嬨" },
+  { "vlc", "嗢" },
 };
 
 // https://dwm.suckless.org/customisation/rules/
