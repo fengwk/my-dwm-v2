@@ -71,6 +71,10 @@ static const TagMapEntry tagnamemap[] = {
   { "Eclipse", "" },
   { "xiaoyi_assistant", "嬨" },
   { "vlc", "嗢" },
+  { "baidunetdisk", "" },
+  { "et", "" },
+  { "wps", "" },
+  { "wpp", "" },
 };
 
 // https://dwm.suckless.org/customisation/rules/
@@ -122,15 +126,15 @@ static const Layout layouts[] = {
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
-static const char *termcmd[]  = { "st", NULL };
-// static const char *termcmd[]  = { "alacritty", NULL };
+// static const char *termcmd[]  = { "st", NULL };
+static const char *termcmd[]  = { "alacritty", NULL };
 static const char *flameshotcmd[] = { "env", "QT_AUTO_SCREEN_SCALE_FACTOR=0", "QT_SCREEN_SCALE_FACTORS=''", "flameshot", "gui", NULL };
 static const char *rofi_win[] = { "rofi", "-show", "window", NULL };
 static const char *rofi_run[] = { "rofi", "-show", "run", NULL };
 static const char *rofi_drun[] = { "rofi", "-show", "drun", NULL };
 static const char scratchpadname[] = "scratchpad";
-static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
-// static const char *scratchpadcmd[] = { "alacritty", "-t", scratchpadname, NULL };
+// static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
+static const char *scratchpadcmd[] = { "alacritty", "-t", scratchpadname, NULL };
 
 /* 
  * xev命令可以获取keycode
