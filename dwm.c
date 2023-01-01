@@ -1323,9 +1323,12 @@ keypress(XEvent *e)
 	keysym = XKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0);
 	for (i = 0; i < LENGTH(keys); i++)
 		if (keysym == keys[i].keysym
-		&& CLEANMASK(keys[i].mod) == CLEANMASK(ev->state)
-		&& keys[i].func)
+		&& (keys[i].mod == NOMODKEY || CLEANMASK(keys[i].mod) == CLEANMASK(ev->state)) // 支持无mod快捷键
+		&& keys[i].func) {
 			keys[i].func(&(keys[i].arg));
+      // 仅应用一个快捷键函数就退出，这样通过合适编排快捷键顺序来避免快捷键冲突
+      break;
+    }
 }
 
 void
@@ -2049,7 +2052,7 @@ setgaps(int oh, int ov, int ih, int iv)
 
 void
 togglesmartgaps(const Arg *arg) {
-  smartgaps =  !smartgaps;
+  smartgaps = !smartgaps;
 	arrange(selmon);
 }
 
