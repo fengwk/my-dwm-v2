@@ -163,6 +163,7 @@ static const Key keys[] = {
   { MODKEY|ShiftMask,             XK_p,         spawn,           {.v = rofi_drun } },
   { MODKEY|ShiftMask,             XK_Return,    spawn,           {.v = termcmd } },
   { MODKEY|ShiftMask,             XK_KP_Enter,  spawn,           {.v = termcmd } },
+  { MODKEY|ShiftMask,             XK_f,         fullscreen,      {0} }, // 全屏
   { MODKEY,                       XK_grave,     togglescratch,   {.v = scratchpadcmd } }, // 打开临时命令行窗口
   { MODKEY,                       XK_Print,     spawn,           {.v = flameshotocrcmd } }, // 截图ocr
   { NOMODKEY,                     XK_Print,     spawn,           {.v = flameshotcmd } }, // 截图
