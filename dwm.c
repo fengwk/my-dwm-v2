@@ -3297,7 +3297,7 @@ movewin(const Arg *arg)
             break;
     }
     resize(c, nx, ny, c->w, c->h, 1);
-    focus(c);
+    pointerfocuswin(c);
 }
 
 void
@@ -3334,8 +3334,7 @@ resizewin(const Arg *arg)
     if (c->y + nh + 2 * c->bw > selmon->wy + selmon->wh)
         nh = selmon->wy + selmon->wh - c->y - 2 * c->bw;
     resize(c, c->x, c->y, nw, nh, 1);
-    focus(c);
-    XWarpPointer(dpy, None, root, 0, 0, 0, 0, c->x + c->w - 2 * c->bw, c->y + c->h - 2 * c->bw);
+    pointerfocuswin(c);
 }
 
 int

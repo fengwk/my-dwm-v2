@@ -74,6 +74,7 @@ static const TagMapEntry tagnamemap[] = {
   { "wps", "" },
   { "wpp", "" },
   { "obs", "辶" },
+  { "Shotcut", "難" },
   { "Optimus Manager Qt", "" },
   { "Nm-connection-editor", "" },
   { "Xfce4-power-manager-settings", "" },
@@ -83,6 +84,7 @@ static const TagMapEntry tagnamemap[] = {
   { "Parcellite", "" },
   { "thunderbird", "" },
   { "Typora", "" },
+  { "Timeshift-gtk", "" },
   { "Timeshift-gtk", "" },
 };
 
@@ -95,8 +97,8 @@ static const Rule rules[] = {
    */
   /* class            instance    title    tags mask    isfloating    monitor    ignoretransient */
   { "Peek",           NULL,       NULL,    0,           1,            -1,        0               },
-  { "popo",           NULL,       NULL,    0,           1,            -1,        0               },
-  { "wechat.exe",     NULL,       NULL,    0,           1,            -1,        0               },
+  // { "popo",           NULL,       NULL,    0,           1,            -1,        0               },
+  // { "wechat.exe",     NULL,       NULL,    0,           1,            -1,        0               },
   { "feh",            NULL,       NULL,    0,           1,            -1,        0               },
   { "jetbrains-idea", NULL,       NULL,    0,           0,            -1,        1               },
   { "jetbrains-idea-ce", NULL,    NULL,    0,           0,            -1,        1               },
@@ -141,11 +143,13 @@ static const char *rofi_run[] = { "rofi", "-show", "run", NULL };
 static const char *rofi_drun[] = { "rofi", "-show", "drun", NULL };
 // static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "st", NULL };
 static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "alacritty", NULL };
+// static const char *termcmd[]  = { "alacritty", NULL };
 static const char scratchpadname[] = "scratchpad";
+// static const char *scratchpadcmd[] = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "st", "-t", scratchpadname, "-g", "120x34", NULL };
 static const char *scratchpadcmd[] = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "alacritty", "-t", scratchpadname, NULL };
+// static const char *scratchpadcmd[] = { "alacritty", "-t", scratchpadname, NULL };
 static const char *flameshotcmd[] = { "env", "QT_AUTO_SCREEN_SCALE_FACTOR=0", "QT_SCREEN_SCALE_FACTORS=''", "flameshot", "gui", NULL };
 static const char *flameshotocrcmd[] = { "flameshotocr.sh", NULL };
-// static const char *scratchpadcmd[] = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "st", "-t", scratchpadname, "-g", "120x34", NULL };
 static const char *monitordetection[] = { "monitor-detection.sh", NULL };
 
 /* 
