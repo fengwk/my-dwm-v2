@@ -63,8 +63,6 @@ static const TagMapEntry tagnamemap[] = {
   { "com-xk72-charles-gui-MainWithClassLoader", "" },
   { "popo", "﫢" },
   { "wechat.exe", "" },
-  { "Optimus Manager Qt", "" },
-  { "Nm-connection-editor", "" },
   { "Postman", "" },
   { "XMind", "" },
   { "Java", "" },
@@ -76,6 +74,16 @@ static const TagMapEntry tagnamemap[] = {
   { "wps", "" },
   { "wpp", "" },
   { "obs", "辶" },
+  { "Optimus Manager Qt", "" },
+  { "Nm-connection-editor", "" },
+  { "Xfce4-power-manager-settings", "" },
+  { "fcitx5-config-qt", "" },
+  { "flameshot", "" },
+  { "Peek", "" },
+  { "Parcellite", "" },
+  { "thunderbird", "" },
+  { "Typora", "" },
+  { "Timeshift-gtk", "" },
 };
 
 // https://dwm.suckless.org/customisation/rules/
@@ -93,7 +101,7 @@ static const Rule rules[] = {
   { "jetbrains-idea", NULL,       NULL,    0,           0,            -1,        1               },
   { "jetbrains-idea-ce", NULL,    NULL,    0,           0,            -1,        1               },
   { "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1, 0 },
-  // { "flameshot", "flameshot", "Configuration", 0, 1, -1 },
+  { "netease-cloud-music", NULL, NULL, 0, 1, -1, 0 },
 };
 
 // overview
@@ -128,16 +136,17 @@ static const Layout layouts[] = {
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
-// static const char *termcmd[]  = { "st", NULL };
-static const char *termcmd[]  = { "alacritty", NULL };
-static const char *flameshotcmd[] = { "env", "QT_AUTO_SCREEN_SCALE_FACTOR=0", "QT_SCREEN_SCALE_FACTORS=''", "flameshot", "gui", NULL };
-static const char *flameshotocrcmd[] = { "flameshotocr.sh", NULL };
 static const char *rofi_win[] = { "rofi", "-show", "window", NULL };
 static const char *rofi_run[] = { "rofi", "-show", "run", NULL };
 static const char *rofi_drun[] = { "rofi", "-show", "drun", NULL };
+// static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "st", NULL };
+static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "alacritty", NULL };
 static const char scratchpadname[] = "scratchpad";
-// static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
-static const char *scratchpadcmd[] = { "alacritty", "-t", scratchpadname, NULL };
+static const char *scratchpadcmd[] = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "alacritty", "-t", scratchpadname, NULL };
+static const char *flameshotcmd[] = { "env", "QT_AUTO_SCREEN_SCALE_FACTOR=0", "QT_SCREEN_SCALE_FACTORS=''", "flameshot", "gui", NULL };
+static const char *flameshotocrcmd[] = { "flameshotocr.sh", NULL };
+// static const char *scratchpadcmd[] = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "st", "-t", scratchpadname, "-g", "120x34", NULL };
+static const char *monitordetection[] = { "monitor-detection.sh", NULL };
 
 /* 
  * xev命令可以获取keycode
@@ -154,9 +163,10 @@ static const Key keys[] = {
   { MODKEY|ShiftMask,             XK_p,         spawn,           {.v = rofi_drun } },
   { MODKEY|ShiftMask,             XK_Return,    spawn,           {.v = termcmd } },
   { MODKEY|ShiftMask,             XK_KP_Enter,  spawn,           {.v = termcmd } },
+  { MODKEY,                       XK_grave,     togglescratch,   {.v = scratchpadcmd } }, // 打开临时命令行窗口
   { MODKEY,                       XK_Print,     spawn,           {.v = flameshotocrcmd } }, // 截图ocr
   { NOMODKEY,                     XK_Print,     spawn,           {.v = flameshotcmd } }, // 截图
-  { MODKEY,                       XK_grave,     togglescratch,   {.v = scratchpadcmd } }, // 打开临时命令行窗口
+  { MODKEY,                       XK_Escape,    spawn,           {.v = monitordetection } }, // 屏幕检测
   { MODKEY,                       XK_b,         togglebar,       {0} }, // 状态栏开关
   { MODKEY,                       XK_j,         focusstack,      {.i = +1 } }, // 向栈底移动
   { MODKEY,                       XK_k,         focusstack,      {.i = -1 } }, // 向栈顶移动
