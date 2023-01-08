@@ -174,7 +174,7 @@ typedef struct {
   int ignoretransient;
 } Rule;
 
-typedef struct Systray   Systray;
+typedef struct Systray Systray;
 struct Systray {
 	Window win;
 	Client *icons;
@@ -184,6 +184,12 @@ typedef struct {
   const char *key;
   const char *val;
 } TagMapEntry;
+
+typedef struct ClientAccNode ClientAccNode;
+struct ClientAccNode {
+  Client *c;
+  ClientAccNode *next;
+};
 
 /* function declarations */
 static void applyrules(Client *c);
@@ -304,6 +310,13 @@ static void updatewmhints(Client *c);
 static void viewtoleft(const Arg *arg);
 static void viewtoright(const Arg *arg);
 static void view(const Arg *arg);
+static void listwindowpids(Window w, Window pids[], int sz);
+static int inwindowpids(Window w, Window pids[], int sz);
+static int isdialog(Client *c);
+static void switchprevclient(const Arg *arg);
+static void switchclient(Client *c);
+static void addaccstack(Client *c);
+static void removeaccstack(Client *c);
 static Client *wintoclient(Window w);
 static Monitor *wintomon(Window w);
 static Client *wintosystrayicon(Window w);
@@ -359,6 +372,7 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
+static ClientAccNode *accstack;
 
 static int useargb = 0;
 static Visual *visual;
@@ -627,6 +641,11 @@ cleanup(void)
 		XDestroyWindow(dpy, systray->win);
 		free(systray);
 	}
+  while (accstack) {
+    ClientAccNode *next = accstack->next;
+    free(accstack);
+    accstack = next;
+  }
 	for (i = 0; i < CurLast; i++)
 		drw_cur_free(drw, cursor[i]);
 	for (i = 0; i < LENGTH(colors); i++)
@@ -652,6 +671,9 @@ cleanupmon(Monitor *mon)
 	}
 	XUnmapWindow(dpy, mon->barwin);
 	XDestroyWindow(dpy, mon->barwin);
+  if (mon->pertag) {
+    free(mon->pertag);
+  }
 	free(mon);
 }
 
@@ -714,23 +736,7 @@ clientmessage(XEvent *e)
 	} else if (cme->message_type == netatom[NetActiveWindow]) {
 		if (c != selmon->sel && !c->isurgent)
 			seturgent(c, 1);
-    // 支持窗口跳转
-    // 如当前监视器非选择的监视器，跳到选择的监视器
-    if (c->mon != selmon) {
-      focusmon(&(Arg) { .i = +1 });
-    }
-    // 如当前tag非选择的tag，跳到选择的tag
-    if (!ISVISIBLE(c)) {
-      view(&(Arg) { .ui = c->tags });
-      // 将选择的窗口置顶
-      // XRaiseWindow(dpy, c->win);
-    }
-    // 聚焦
-    focus(c);
-    // 将选中窗口推到主工作区
-    pop(c);
-    // 定位光标到相应client
-    // pointerfocuswin(c);
+    switchclient(c);
 	}
 }
 
@@ -892,6 +898,8 @@ detach(Client *c)
 
 	for (tc = &c->mon->clients; *tc && *tc != c; tc = &(*tc)->next);
 	*tc = c->next;
+
+  removeaccstack(c);
 }
 
 void
@@ -1109,6 +1117,7 @@ focus(Client *c)
 	}
 	selmon->sel = c;
 	drawbars();
+  addaccstack(c);
 }
 
 /* there are some broken focus acquiring clients needing extra handling */
@@ -1133,7 +1142,7 @@ focusmon(const Arg *arg)
 	unfocus(selmon->sel, 0);
 	selmon = m;
 	focus(NULL);
-  pointerfocuswin(NULL);
+  // pointerfocuswin(NULL);
 }
 
 void
@@ -2383,7 +2392,7 @@ tagmon(const Arg *arg)
     // 定位焦点到相应client
     focus(c);
     // 定位光标到相应client
-    pointerfocuswin(c);
+    // pointerfocuswin(c);
   }
 }
 
@@ -2391,11 +2400,12 @@ tagmon(const Arg *arg)
 void
 pointerfocuswin(Client *c)
 {
-    if (c) {
-        XWarpPointer(dpy, None, root, 0, 0, 0, 0, c->x + c->w / 2, c->y + c->h / 2);
-        focus(c);
-    } else
-        XWarpPointer(dpy, None, root, 0, 0, 0, 0, selmon->wx + selmon->ww / 3, selmon->wy + selmon->wh / 2);
+  if (c) {
+    XWarpPointer(dpy, None, root, 0, 0, 0, 0, c->x + c->w / 2, c->y + c->h / 2);
+    focus(c);
+  } else {
+    XWarpPointer(dpy, None, root, 0, 0, 0, 0, selmon->wx + selmon->ww / 2, selmon->wy + selmon->wh / 2);
+  }
 }
 
 /**
@@ -3120,6 +3130,135 @@ view(const Arg *arg)
 
 	focus(NULL);
 	arrange(selmon);
+}
+
+void
+listwindowpids(Window w, Window pids[], int sz) {
+  pids[0] = w;
+  for (int i = 1; i < sz; i++) {
+    pids[i] = 0L;
+  }
+  unsigned int num;
+  Window root, parent, *children = NULL;
+  for (int i = 1; i < sz; i++) {
+    if (!XQueryTree(dpy, w, &root, &parent, &children, &num)) {
+      break;
+    }
+    if (children) {
+      XFree(children);
+    }
+    pids[i] = parent;
+    if (w == root) {
+      break;
+    }
+    w = parent;
+  }
+}
+
+int
+inwindowpids(Window w, Window pids[], int sz) {
+  if (w && pids) {
+    for (int i = 0; i < sz; i++) {
+      if (w == pids[i]) {
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+int
+isdialog(Client *c) {
+  return c && getatomprop(c, netatom[NetWMWindowType]) == netatom[NetWMWindowTypeDialog];
+}
+
+void
+switchprevclient(const Arg *arg) {
+
+  if (!accstack) {
+    return;
+  }
+
+  // 如果当前窗口是dialog，找到非dialog的第2个窗口，如果没有第2个则取第1个
+  // 如果当前窗口非dialog，找到第1个窗口
+  Client *selc = selmon && selmon->sel ? selmon->sel : NULL;
+  if (isdialog(selc)) {
+    ClientAccNode *f1 = accstack;
+    while (f1 && (f1->c == selc || isdialog(f1->c))) {
+      f1 = f1->next;
+    }
+    ClientAccNode *f2 = f1 ? f1->next : NULL;
+    while (f2 && f2->c == selc) {
+      f2 = f2->next;
+    }
+    if (f2) {
+      switchclient(f2->c);
+    } else if (f1) {
+      switchclient(f1->c);
+    }
+  } else {
+    ClientAccNode *f = accstack;
+    while (f && f->c == selc) {
+      f = f->next;
+    }
+    if (f) {
+      switchclient(f->c);
+    }
+  }
+}
+
+// 切换到指定client
+void
+switchclient(Client *c) {
+  // 如果当前monitor并非client所在的monitor，跳到选择的监视器
+  if (c->mon != selmon) {
+    focusmon(&(Arg) { .i = +1 });// 简单的实现，超过2个monitor时可能发生错误
+  }
+  // 如果当前tag下不可见，跳转到相应的tag上
+  if (!ISVISIBLE(c)) {
+    view(&(Arg) { .ui = c->tags });
+  }
+  // 聚焦并重置栈
+  focus(c);
+  restack(selmon);
+  // 将选择的窗口置顶
+  // XRaiseWindow(dpy, c->win);
+  // 将选中窗口推到主工作区
+  // pop(c);
+  // 定位光标到相应client
+  // if (selmon && selmon->sel && selmon->sel != c) {
+  //   pointerfocuswin(c);
+  // }
+}
+
+void
+addaccstack(Client *c) {
+  if (c && !isdialog(c)) {
+    removeaccstack(c);
+
+    ClientAccNode *h = ecalloc(1, sizeof(ClientAccNode));
+    h->c = c;
+    h->next = accstack;
+    accstack = h;
+  }
+}
+
+void
+removeaccstack(Client *c) {
+  ClientAccNode **cur = &accstack;
+  while (*cur && (*cur)->c != c) {
+    cur = &(*cur)->next;
+  }
+
+  if (*cur) {
+    ClientAccNode *curfree = *cur;
+    if ((*cur)->next) {
+      *cur = (*cur)->next;
+    } else {
+      *cur = NULL;
+    }
+    free(curfree);
+  }
 }
 
 Client *

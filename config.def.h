@@ -70,6 +70,8 @@ static const TagMapEntry tagnamemap[] = {
   { "xiaoyi_assistant", "嬨" },
   { "vlc", "嗢" },
   { "baidunetdisk", "" },
+  { "Baidunetdisk", "" },
+  { "Dragon-drop", "" },
   { "et", "" },
   { "wps", "" },
   { "wpp", "" },
@@ -79,13 +81,16 @@ static const TagMapEntry tagnamemap[] = {
   { "Nm-connection-editor", "" },
   { "Xfce4-power-manager-settings", "" },
   { "fcitx5-config-qt", "" },
+  { "pavucontrol-qt", "" },
+  { "Tlp-UI", "" },
   { "flameshot", "" },
   { "Peek", "" },
   { "Parcellite", "" },
   { "thunderbird", "" },
   { "Typora", "" },
   { "Timeshift-gtk", "" },
-  { "Timeshift-gtk", "" },
+  { "pdf", "" },
+  { "netease-cloud-music", "" },
 };
 
 // https://dwm.suckless.org/customisation/rules/
@@ -97,8 +102,8 @@ static const Rule rules[] = {
    */
   /* class            instance    title    tags mask    isfloating    monitor    ignoretransient */
   { "Peek",           NULL,       NULL,    0,           1,            -1,        0               },
-  // { "popo",           NULL,       NULL,    0,           1,            -1,        0               },
-  // { "wechat.exe",     NULL,       NULL,    0,           1,            -1,        0               },
+  { "popo",           NULL,       NULL,    0,           1,            -1,        0               },
+  { "wechat.exe",     NULL,       NULL,    0,           1,            -1,        0               },
   { "feh",            NULL,       NULL,    0,           1,            -1,        0               },
   { "jetbrains-idea", NULL,       NULL,    0,           0,            -1,        1               },
   { "jetbrains-idea-ce", NULL,    NULL,    0,           0,            -1,        1               },
@@ -142,15 +147,18 @@ static const char *rofi_win[] = { "rofi", "-show", "window", NULL };
 static const char *rofi_run[] = { "rofi", "-show", "run", NULL };
 static const char *rofi_drun[] = { "rofi", "-show", "drun", NULL };
 // static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "st", NULL };
-static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "alacritty", NULL };
+static const char *termcmd[]  = { "st", NULL };
+// static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "alacritty", NULL };
 // static const char *termcmd[]  = { "alacritty", NULL };
 static const char scratchpadname[] = "scratchpad";
 // static const char *scratchpadcmd[] = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "st", "-t", scratchpadname, "-g", "120x34", NULL };
-static const char *scratchpadcmd[] = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "alacritty", "-t", scratchpadname, NULL };
+static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
+// static const char *scratchpadcmd[] = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "alacritty", "-t", scratchpadname, NULL };
 // static const char *scratchpadcmd[] = { "alacritty", "-t", scratchpadname, NULL };
 static const char *flameshotcmd[] = { "env", "QT_AUTO_SCREEN_SCALE_FACTOR=0", "QT_SCREEN_SCALE_FACTORS=''", "flameshot", "gui", NULL };
 static const char *flameshotocrcmd[] = { "flameshotocr.sh", NULL };
-static const char *monitordetection[] = { "monitor-detection.sh", NULL };
+static const char *monitorswitch1[] = { "monitor-switch.sh", "1", NULL };
+static const char *monitorswitch2[] = { "monitor-switch.sh", "2", NULL };
 
 /* 
  * xev命令可以获取keycode
@@ -171,7 +179,8 @@ static const Key keys[] = {
   { MODKEY,                       XK_grave,     togglescratch,   {.v = scratchpadcmd } }, // 打开临时命令行窗口
   { MODKEY,                       XK_Print,     spawn,           {.v = flameshotocrcmd } }, // 截图ocr
   { NOMODKEY,                     XK_Print,     spawn,           {.v = flameshotcmd } }, // 截图
-  { MODKEY,                       XK_Escape,    spawn,           {.v = monitordetection } }, // 屏幕检测
+  { Mod4Mask,                     XK_1,         spawn,           {.v = monitorswitch1 } }, // 屏幕检测，单监视器
+  { Mod4Mask,                     XK_2,         spawn,           {.v = monitorswitch2 } }, // 屏幕检测，双监视器
   { MODKEY,                       XK_b,         togglebar,       {0} }, // 状态栏开关
   { MODKEY,                       XK_j,         focusstack,      {.i = +1 } }, // 向栈底移动
   { MODKEY,                       XK_k,         focusstack,      {.i = -1 } }, // 向栈顶移动
@@ -217,7 +226,8 @@ static const Key keys[] = {
   { MODKEY|Mod4Mask,              XK_j,         resizewin,       {.ui = V_EXPAND} }, // 垂直增加窗口大小
   { MODKEY|Mod4Mask,              XK_h,         resizewin,       {.ui = H_REDUCE} }, // 水平减少窗口大小
   { MODKEY|Mod4Mask,              XK_l,         resizewin,       {.ui = H_EXPAND} }, // 水平增加窗口大小
-  { MODKEY,                       XK_Tab,       view,            {0} },
+  { MODKEY,                       XK_Tab,       switchprevclient,{0} }, // 切换到上一个聚焦窗口
+  { MODKEY|ShiftMask,             XK_Tab,       view,            {0} }, // 切换到上一个tag
   { Mod4Mask,                     XK_w,         toggleoverview,  {0} },
   { MODKEY|ShiftMask,             XK_c,         killclient,      {0} },
   { MODKEY,                       XK_t,         setlayout,       {.v = &layouts[0]} },
