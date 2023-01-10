@@ -737,6 +737,7 @@ clientmessage(XEvent *e)
 	} else if (cme->message_type == netatom[NetActiveWindow]) {
 		if (c != selmon->sel && !c->isurgent)
 			seturgent(c, 1);
+    // 收到通知后切换到指定client
     switchclient(c);
 	}
 }
@@ -1106,11 +1107,15 @@ focus(Client *c)
 		detachstack(c);
 		attachstack(c);
 		grabbuttons(c, 1);
+    // 设置边框
+    XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
+    // 下面的代码为了避免边框闪烁，但这会使得monocle模式切换回title时因为无法重新触发focus导致边框不显示
+    // 我暂时还没有遇到边框闪烁的问题，因此暂时注释这个补丁的内容
 		/* Avoid flickering when another client appears and the border
 		 * is restored */
-		if (!solitary(c)) {
-			XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
-		}
+		// if (!solitary(c)) {
+		// 	XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
+		// }
 		setfocus(c);
 	} else {
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
@@ -1561,11 +1566,12 @@ movemouse(const Arg *arg)
 }
 
 /**
- * 从客户端链表中找到下一个不是浮动且可见的client实例
+ * 找到下一个平铺client
  */
 Client *
 nexttiled(Client *c)
 {
+  // 从客户端链表中找到下一个不是浮动且可见的client实例
 	for (; c && (c->isfloating || !ISVISIBLE(c)); c = c->next);
 	return c;
 }
@@ -1775,13 +1781,15 @@ restack(Monitor *m)
 	drawbar(m);
 	if (!m->sel)
 		return;
-	if (m->sel->isfloating || !m->lt[m->sellt]->arrange)
+	if (m->sel->isfloating || !m->lt[m->sellt]->arrange) // 当前client是浮动的，或布局是浮动的，将当前窗口置顶
 		XRaiseWindow(dpy, m->sel->win);
 	if (m->lt[m->sellt]->arrange) {
 		wc.stack_mode = Below;
 		wc.sibling = m->barwin;
 		for (c = m->stack; c; c = c->snext)
 			if (!c->isfloating && ISVISIBLE(c)) {
+        // 窗口非浮动，则重新配置窗口
+        // https://linux.die.net/man/3/xconfigurewindow
 				XConfigureWindow(dpy, c->win, CWSibling|CWStackMode, &wc);
 				wc.sibling = c->win;
 			}
@@ -2357,10 +2365,10 @@ sigchld(int unused)
 int
 solitary(Client *c)
 {
-	return ((nexttiled(c->mon->clients) == c && !nexttiled(c->next))
-	    || &monocle == c->mon->lt[c->mon->sellt]->arrange)
-	    && !c->isfullscreen && !c->isfloating && !selmon->isoverview
-	    && NULL != c->mon->lt[c->mon->sellt]->arrange;
+	return ((nexttiled(c->mon->clients) == c && !nexttiled(c->next)) // 只有一个平铺client
+	    || &monocle == c->mon->lt[c->mon->sellt]->arrange) // 或当前是monocle布局
+	    && !c->isfullscreen && !c->isfloating && !selmon->isoverview // 且client不处于这3种状态
+	    && NULL != c->mon->lt[c->mon->sellt]->arrange; // 且不是NULL，也就是浮动的布局
 }
 
 void
@@ -2383,7 +2391,11 @@ tag(const Arg *arg)
 {
 	if (selmon->sel && arg->ui & TAGMASK) {
 		selmon->sel->tags = arg->ui & TAGMASK;
-    switchclient(selmon->sel);
+    // 跳到新的tag
+    view(arg);
+    // 聚焦到客户端
+    focus(NULL);
+    // 重新布局且刷新
 		arrange(selmon);
 	}
 }
@@ -3212,6 +3224,9 @@ switchprevclient(const Arg *arg) {
 // 切换到指定client
 void
 switchclient(Client *c) {
+  if (selmon->sel == c) {
+    return;
+  }
   // 如果当前monitor并非client所在的monitor，跳到选择的监视器
   if (c->mon != selmon) {
     focusmonbyclient(c);
