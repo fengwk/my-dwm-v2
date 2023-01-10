@@ -220,6 +220,7 @@ static void expose(XEvent *e);
 static void focus(Client *c);
 static void focusin(XEvent *e);
 static void focusmon(const Arg *arg);
+static void focusmonbyclient(Client *c);
 static void focusstack(const Arg *arg);
 static Atom getatomprop(Client *c, Atom prop);
 static int getrootptr(int *x, int *y);
@@ -1142,7 +1143,17 @@ focusmon(const Arg *arg)
 	unfocus(selmon->sel, 0);
 	selmon = m;
 	focus(NULL);
-  // pointerfocuswin(NULL);
+}
+
+void
+focusmonbyclient(Client *c) {
+	Monitor *m;
+  if (!c || !mons->next || (m = c->mon) == selmon) {
+    return;
+  }
+	unfocus(selmon->sel, 0);
+	selmon = m;
+	focus(NULL);
 }
 
 void
@@ -2372,9 +2383,7 @@ tag(const Arg *arg)
 {
 	if (selmon->sel && arg->ui & TAGMASK) {
 		selmon->sel->tags = arg->ui & TAGMASK;
-    view(arg); // 跳到新的tag
-    pop(selmon->sel); // 将选中窗口切换到主工作区
-		// focus(NULL);
+    switchclient(selmon->sel);
 		arrange(selmon);
 	}
 }
@@ -2386,14 +2395,7 @@ tagmon(const Arg *arg)
 	if (!selmon->sel || !mons->next)
 		return;
 	sendmon(c, dirtomon(arg->i));
-  // 定位到目标monitor
-  focusmon(arg);
-  if (ISVISIBLE(c)) {
-    // 定位焦点到相应client
-    focus(c);
-    // 定位光标到相应client
-    // pointerfocuswin(c);
-  }
+  switchclient(c);
 }
 
 // 光标定位
@@ -3212,7 +3214,7 @@ void
 switchclient(Client *c) {
   // 如果当前monitor并非client所在的monitor，跳到选择的监视器
   if (c->mon != selmon) {
-    focusmon(&(Arg) { .i = +1 });// 简单的实现，超过2个monitor时可能发生错误
+    focusmonbyclient(c);
   }
   // 如果当前tag下不可见，跳转到相应的tag上
   if (!ISVISIBLE(c)) {
