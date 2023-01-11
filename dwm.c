@@ -1075,7 +1075,7 @@ enternotify(XEvent *e)
 	m = c ? c->mon : wintomon(ev->window);
 	if (m != selmon) {
 		unfocus(selmon->sel, 1);
-		selmon = m;
+		// selmon = m; // 这会导致使用rofi时错误的monitor聚焦（按照光标所在位置聚焦）
 	} else if (!c || c == selmon->sel)
 		return;
 	focus(c);

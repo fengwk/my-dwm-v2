@@ -169,9 +169,9 @@ static const char *monitorswitch2[] = { "monitor-switch.sh", "2", NULL };
  */
 static const Key keys[] = {
   /* modifier                     key           function         argument */
-  { MODKEY,                       XK_p,         spawn,           {.v = dmenucmd } },
+  // { MODKEY,                       XK_p,         spawn,           {.v = dmenucmd } },
   { MODKEY,                       XK_w,         spawn,           {.v = rofi_win } },
-  // { MODKEY,                       XK_p,         spawn,           {.v = rofi_run } },
+  { MODKEY,                       XK_p,         spawn,           {.v = rofi_run } },
   { MODKEY|ShiftMask,             XK_p,         spawn,           {.v = rofi_drun } },
   { MODKEY|ShiftMask,             XK_Return,    spawn,           {.v = termcmd } },
   { MODKEY|ShiftMask,             XK_KP_Enter,  spawn,           {.v = termcmd } },
