@@ -172,6 +172,7 @@ typedef struct {
 	int isfloating;
 	int monitor;
   int ignoretransient;
+  int hideborder;
 } Rule;
 
 typedef struct Systray Systray;
@@ -425,6 +426,7 @@ applyrules(Client *c)
 			c->isfloating = r->isfloating;
       c->ignoretransient = r->ignoretransient;
 			c->tags |= r->tags;
+      c->bw = r->hideborder ? 0 : borderpx;
 			for (m = mons; m && m->num != r->monitor; m = m->next);
 			if (m)
 				c->mon = m;
@@ -1102,8 +1104,12 @@ focus(Client *c)
 	if (c) {
 		if (c->mon != selmon)
 			selmon = c->mon;
+    // 取消urgent标识
 		if (c->isurgent)
-			seturgent(c, 0);
+			seturgent(c, 0); 
+    // 浮动窗口或浮动布局在聚焦时将窗口置顶
+    // if (c->isfloating || (c->mon && c->mon->sellt && !c->mon->lt[c->mon->sellt]->arrange))
+    //   XRaiseWindow(dpy, c->win);
 		detachstack(c);
 		attachstack(c);
 		grabbuttons(c, 1);
@@ -1388,6 +1394,7 @@ manage(Window w, XWindowAttributes *wa)
 	c->w = c->oldw = wa->width;
 	c->h = c->oldh = wa->height;
 	c->oldbw = wa->border_width;
+  c->bw = borderpx; // 先设置bw，以便可以在applayrules中重定义，原先在下面的位置设置，如果提前有问题再行处理
 
 	updatetitle(c);
 	if (XGetTransientForHint(dpy, w, &trans) && (t = wintoclient(trans))) {
@@ -1404,7 +1411,7 @@ manage(Window w, XWindowAttributes *wa)
 		c->y = c->mon->wy + c->mon->wh - HEIGHT(c);
 	c->x = MAX(c->x, c->mon->wx);
 	c->y = MAX(c->y, c->mon->wy);
-	c->bw = borderpx;
+  // c->bw = borderpx;
 
 	selmon->tagset[selmon->seltags] &= ~scratchtag;
 	if (!strcmp(c->name, scratchpadname)) {

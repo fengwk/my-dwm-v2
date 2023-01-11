@@ -100,15 +100,15 @@ static const Rule rules[] = {
    *	WM_CLASS(STRING) = instance, class
    *	WM_NAME(STRING) = title
    */
-  /* class            instance    title    tags mask    isfloating    monitor    ignoretransient */
-  { "Peek",           NULL,       NULL,    0,           1,            -1,        0               },
-  { "popo",           NULL,       NULL,    0,           1,            -1,        0               },
-  { "wechat.exe",     NULL,       NULL,    0,           1,            -1,        0               },
-  { "feh",            NULL,       NULL,    0,           1,            -1,        0               },
-  { "jetbrains-idea", NULL,       NULL,    0,           0,            -1,        1               },
-  { "jetbrains-idea-ce", NULL,    NULL,    0,           0,            -1,        1               },
-  { "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1, 0 },
-  { "netease-cloud-music", NULL, NULL, 0, 1, -1, 0 },
+  /* class            instance    title    tags mask    isfloating    monitor    ignoretransient    hideborder */
+  { "Peek",           NULL,       NULL,    0,           1,            -1,        0,                 0 },
+  { "popo",           NULL,       NULL,    0,           1,            -1,        0,                 1 },
+  { "wechat.exe",     NULL,       NULL,    0,           1,            -1,        0,                 0 },
+  { "feh",            NULL,       NULL,    0,           1,            -1,        0,                 0 },
+  { "jetbrains-idea", NULL,       NULL,    0,           0,            -1,        1,                 0 },
+  { "jetbrains-idea-ce", NULL,    NULL,    0,           0,            -1,        1,                 0 },
+  { "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1, 0,             0 },
+  { "netease-cloud-music", NULL, NULL, 0, 1, -1, 0,                                                 0 },
 };
 
 // overview
@@ -169,9 +169,9 @@ static const char *monitorswitch2[] = { "monitor-switch.sh", "2", NULL };
  */
 static const Key keys[] = {
   /* modifier                     key           function         argument */
-  // { MODKEY,                       XK_p,         spawn,           {.v = dmenucmd } },
+  { MODKEY,                       XK_p,         spawn,           {.v = dmenucmd } },
   { MODKEY,                       XK_w,         spawn,           {.v = rofi_win } },
-  { MODKEY,                       XK_p,         spawn,           {.v = rofi_run } },
+  // { MODKEY,                       XK_p,         spawn,           {.v = rofi_run } },
   { MODKEY|ShiftMask,             XK_p,         spawn,           {.v = rofi_drun } },
   { MODKEY|ShiftMask,             XK_Return,    spawn,           {.v = termcmd } },
   { MODKEY|ShiftMask,             XK_KP_Enter,  spawn,           {.v = termcmd } },
@@ -228,6 +228,7 @@ static const Key keys[] = {
   { MODKEY|Mod4Mask,              XK_l,         resizewin,       {.ui = H_EXPAND} }, // 水平增加窗口大小
   { MODKEY,                       XK_Tab,       switchprevclient,{0} }, // 切换到上一个聚焦窗口
   { MODKEY|ShiftMask,             XK_Tab,       view,            {0} }, // 切换到上一个tag
+  // { NOMODKEY,                     XK_Super_L,   toggleoverview,  {0} },
   { Mod4Mask,                     XK_w,         toggleoverview,  {0} },
   { MODKEY|ShiftMask,             XK_c,         killclient,      {0} },
   { MODKEY,                       XK_t,         setlayout,       {.v = &layouts[0]} },
