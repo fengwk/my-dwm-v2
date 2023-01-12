@@ -91,6 +91,9 @@ static const TagMapEntry tagnamemap[] = {
   { "Timeshift-gtk", "" },
   { "pdf", "" },
   { "netease-cloud-music", "" },
+  { "QQ", "" },
+  { "VirtualBox Manager", "練" },
+  { "VirtualBox Machine", "練" },
 };
 
 // https://dwm.suckless.org/customisation/rules/
@@ -104,6 +107,7 @@ static const Rule rules[] = {
   { "Peek",           NULL,       NULL,    0,           1,            -1,        0,                 0 },
   { "popo",           NULL,       NULL,    0,           1,            -1,        0,                 1 },
   { "wechat.exe",     NULL,       NULL,    0,           1,            -1,        0,                 0 },
+  { "QQ",             NULL,       NULL,    0,           1,            -1,        0,                 0 },
   { "feh",            NULL,       NULL,    0,           1,            -1,        0,                 0 },
   { "jetbrains-idea", NULL,       NULL,    0,           0,            -1,        1,                 0 },
   { "jetbrains-idea-ce", NULL,    NULL,    0,           0,            -1,        1,                 0 },
@@ -146,6 +150,7 @@ static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont,
 static const char *rofi_win[] = { "rofi", "-show", "window", NULL };
 static const char *rofi_run[] = { "rofi", "-show", "run", NULL };
 static const char *rofi_drun[] = { "rofi", "-show", "drun", NULL };
+static const char *rofi_ssh[] = { "rofi", "-show", "ssh", NULL };
 // static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "st", NULL };
 static const char *termcmd[]  = { "st", NULL };
 // static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "alacritty", NULL };
@@ -173,6 +178,7 @@ static const Key keys[] = {
   { MODKEY,                       XK_w,         spawn,           {.v = rofi_win } },
   { MODKEY,                       XK_p,         spawn,           {.v = rofi_run } },
   { MODKEY|ShiftMask,             XK_p,         spawn,           {.v = rofi_drun } },
+  { MODKEY,                       XK_s,         spawn,           {.v = rofi_ssh } },
   { MODKEY|ShiftMask,             XK_Return,    spawn,           {.v = termcmd } },
   { MODKEY|ShiftMask,             XK_KP_Enter,  spawn,           {.v = termcmd } },
   { MODKEY|ShiftMask,             XK_f,         fullscreen,      {0} }, // 全屏
@@ -188,11 +194,11 @@ static const Key keys[] = {
   { MODKEY,                       XK_d,         incnmaster,      {.i = -1 } }, // 减少主工作区数量
   { MODKEY,                       XK_h,         setmfact,        {.f = -0.05} }, // 减少主工作区空间
   { MODKEY,                       XK_l,         setmfact,        {.f = +0.05} }, // 增加主工作区空间
-  { MODKEY|Mod4Mask|ShiftMask,    XK_BackSpace, togglesmartgaps, {0} }, // 智能间隙开关（仅有一个client时是否显示间隙）
-  { MODKEY|Mod4Mask,              XK_BackSpace, togglegaps,      {0} }, // 间隙开关
-  { MODKEY|Mod4Mask,              XK_0,         defaultgaps,     {0} }, // 重置间隙
-  { MODKEY|Mod4Mask,              XK_equal,     incrgaps,        {.i = +1 } }, // 增大间隙
-  { MODKEY|Mod4Mask,              XK_minus,     incrgaps,        {.i = -1 } }, // 减少间隙
+  { Mod4Mask|ShiftMask,           XK_BackSpace, togglesmartgaps, {0} }, // 智能间隙开关（仅有一个client时是否显示间隙）
+  { Mod4Mask,                     XK_BackSpace, togglegaps,      {0} }, // 间隙开关
+  { Mod4Mask,                     XK_0,         defaultgaps,     {0} }, // 重置间隙
+  { Mod4Mask,                     XK_equal,     incrgaps,        {.i = +1 } }, // 增大间隙
+  { Mod4Mask,                     XK_minus,     incrgaps,        {.i = -1 } }, // 减少间隙
   // { MODKEY|Mod4Mask,              XK_h,         incrgaps,        {.i = +1 } },
   // { MODKEY|Mod4Mask,              XK_l,         incrgaps,        {.i = -1 } },
   // { MODKEY|Mod4Mask|ShiftMask,    XK_h,         incrogaps,       {.i = +1 } },
@@ -218,14 +224,14 @@ static const Key keys[] = {
   { Mod4Mask,                     XK_j,         movewin,         {.ui = DOWN} },     // 向下移动窗口
   { Mod4Mask,                     XK_h,         movewin,         {.ui = LEFT} },     // 向左移动窗口
   { Mod4Mask,                     XK_l,         movewin,         {.ui = RIGHT} },    // 向右移动窗口
-  { MODKEY|Mod4Mask,              XK_Up,        resizewin,       {.ui = V_REDUCE} }, // 垂直减少窗口大小
-  { MODKEY|Mod4Mask,              XK_Down,      resizewin,       {.ui = V_EXPAND} }, // 垂直增加窗口大小
-  { MODKEY|Mod4Mask,              XK_Left,      resizewin,       {.ui = H_REDUCE} }, // 水平减少窗口大小
-  { MODKEY|Mod4Mask,              XK_Right,     resizewin,       {.ui = H_EXPAND} }, // 水平增加窗口大小
-  { MODKEY|Mod4Mask,              XK_k,         resizewin,       {.ui = V_REDUCE} }, // 垂直减少窗口大小
-  { MODKEY|Mod4Mask,              XK_j,         resizewin,       {.ui = V_EXPAND} }, // 垂直增加窗口大小
-  { MODKEY|Mod4Mask,              XK_h,         resizewin,       {.ui = H_REDUCE} }, // 水平减少窗口大小
-  { MODKEY|Mod4Mask,              XK_l,         resizewin,       {.ui = H_EXPAND} }, // 水平增加窗口大小
+  { Mod4Mask|ShiftMask,           XK_Up,        resizewin,       {.ui = V_REDUCE} }, // 垂直减少窗口大小
+  { Mod4Mask|ShiftMask,           XK_Down,      resizewin,       {.ui = V_EXPAND} }, // 垂直增加窗口大小
+  { Mod4Mask|ShiftMask,           XK_Left,      resizewin,       {.ui = H_REDUCE} }, // 水平减少窗口大小
+  { Mod4Mask|ShiftMask,           XK_Right,     resizewin,       {.ui = H_EXPAND} }, // 水平增加窗口大小
+  { Mod4Mask|ShiftMask,           XK_k,         resizewin,       {.ui = V_REDUCE} }, // 垂直减少窗口大小
+  { Mod4Mask|ShiftMask,           XK_j,         resizewin,       {.ui = V_EXPAND} }, // 垂直增加窗口大小
+  { Mod4Mask|ShiftMask,           XK_h,         resizewin,       {.ui = H_REDUCE} }, // 水平减少窗口大小
+  { Mod4Mask|ShiftMask,           XK_l,         resizewin,       {.ui = H_EXPAND} }, // 水平增加窗口大小
   { MODKEY,                       XK_Tab,       switchprevclient,{0} }, // 切换到上一个聚焦窗口
   { MODKEY|ShiftMask,             XK_Tab,       view,            {0} }, // 切换到上一个tag
   // { NOMODKEY,                     XK_Super_L,   toggleoverview,  {0} },
