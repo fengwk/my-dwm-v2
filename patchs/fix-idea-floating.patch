@@ -1,0 +1,81 @@
+From 777889a92af132b7fbee44a250d06fe236d3e089 Mon Sep 17 00:00:00 2001
+From: fengwk <759543714@qq.com>
+Date: Thu, 22 Dec 2022 13:21:21 +0800
+Subject: [PATCH] =?UTF-8?q?=E4=BF=AE=E5=A4=8Didea=E8=87=AA=E5=8A=A8?=
+ =?UTF-8?q?=E6=B5=AE=E5=8A=A8=E9=97=AE=E9=A2=98?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ config.def.h | 15 ++++++++-------
+ dwm.c        |  6 ++++--
+ 2 files changed, 12 insertions(+), 9 deletions(-)
+
+diff --git a/config.def.h b/config.def.h
+index f774582..061f6ad 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -79,13 +79,14 @@ static const Rule rules[] = {
+ 	 *	WM_CLASS(STRING) = instance, class
+ 	 *	WM_NAME(STRING) = title
+ 	 */
+-	/* class            instance    title    tags mask    isfloating    monitor */
+-	{ "jetbrains-idea", NULL,       NULL,    0,           0,            -1 },
+-	{ "Peek",           NULL,       NULL,    0,           1,            -1 },
+-  { "popo",           NULL,       NULL,    0,           1,            -1 },
+-  { "wechat.exe",     NULL,       NULL,    0,           1,            -1 },
+-	{ "feh",            NULL,       NULL,    0,           1,            -1 },
+-	{ "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1 },
++	/* class            instance    title    tags mask    isfloating    monitor    ignoretransient */
++	{ "Peek",           NULL,       NULL,    0,           1,            -1,        0               },
++  { "popo",           NULL,       NULL,    0,           1,            -1,        0               },
++  { "wechat.exe",     NULL,       NULL,    0,           1,            -1,        0               },
++	{ "feh",            NULL,       NULL,    0,           1,            -1,        0               },
++	{ "jetbrains-idea", NULL,       NULL,    0,           0,            -1,        1               },
++	{ "jetbrains-idea-ce", NULL,    NULL,    0,           0,            -1,        1               },
++	{ "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1, 0 },
+ 	// { "flameshot", "flameshot", "Configuration", 0, 1, -1 },
+ };
+ 
+diff --git a/dwm.c b/dwm.c
+index 45947f4..e4fab8c 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -116,7 +116,7 @@ struct Client {
+ 	int basew, baseh, incw, inch, maxw, maxh, minw, minh, hintsvalid;
+ 	int bw, oldbw;
+ 	unsigned int tags;
+-	int isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen;
++	int isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen, ignoretransient;
+ 	Client *next;
+ 	Client *snext;
+ 	Monitor *mon;
+@@ -171,6 +171,7 @@ typedef struct {
+ 	unsigned int tags;
+ 	int isfloating;
+ 	int monitor;
++  int ignoretransient;
+ } Rule;
+ 
+ typedef struct Systray   Systray;
+@@ -406,6 +407,7 @@ applyrules(Client *c)
+ 		&& (!r->instance || strstr(instance, r->instance)))
+ 		{
+ 			c->isfloating = r->isfloating;
++      c->ignoretransient = r->ignoretransient;
+ 			c->tags |= r->tags;
+ 			for (m = mons; m && m->num != r->monitor; m = m->next);
+ 			if (m)
+@@ -1578,7 +1580,7 @@ propertynotify(XEvent *e)
+ 		switch(ev->atom) {
+ 		default: break;
+ 		case XA_WM_TRANSIENT_FOR:
+-			if (!c->isfloating && (XGetTransientForHint(dpy, c->win, &trans)) &&
++			if (!c->ignoretransient && !c->isfloating && (XGetTransientForHint(dpy, c->win, &trans)) &&
+ 				(c->isfloating = (wintoclient(trans)) != NULL))
+ 				arrange(c->mon);
+ 			break;
+-- 
+2.39.0
+
