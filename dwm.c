@@ -2293,8 +2293,10 @@ setup(void)
 	xatom[Xembed] = XInternAtom(dpy, "_XEMBED", False);
 	xatom[XembedInfo] = XInternAtom(dpy, "_XEMBED_INFO", False);
 	/* init cursors */
+  // https://tronche.com/gui/x/xlib/appendix/b/
 	cursor[CurNormal] = drw_cur_create(drw, XC_left_ptr);
-	cursor[CurResize] = drw_cur_create(drw, XC_sizing);
+	// cursor[CurResize] = drw_cur_create(drw, XC_sizing);
+	cursor[CurResize] = drw_cur_create(drw, XC_bottom_right_corner);
 	cursor[CurMove] = drw_cur_create(drw, XC_fleur);
 	/* init appearance */
 	scheme = ecalloc(LENGTH(colors), sizeof(Clr *));
@@ -3152,14 +3154,14 @@ view(const Arg *arg)
 }
 
 void
-listwindowpids(Window w, Window pids[], int sz) {
+listwindowpids(Window w, Window pids[], int len) {
   pids[0] = w;
-  for (int i = 1; i < sz; i++) {
+  for (int i = 1; i < len; i++) {
     pids[i] = 0L;
   }
   unsigned int num;
   Window root, parent, *children = NULL;
-  for (int i = 1; i < sz; i++) {
+  for (int i = 1; i < len; i++) {
     if (!XQueryTree(dpy, w, &root, &parent, &children, &num)) {
       break;
     }
@@ -3175,9 +3177,9 @@ listwindowpids(Window w, Window pids[], int sz) {
 }
 
 int
-inwindowpids(Window w, Window pids[], int sz) {
+inwindowpids(Window w, Window pids[], int len) {
   if (w && pids) {
-    for (int i = 0; i < sz; i++) {
+    for (int i = 0; i < len; i++) {
       if (w == pids[i]) {
         return 1;
       }

@@ -80,6 +80,8 @@ static const TagMapEntry tagnamemap[] = {
   { "Optimus Manager Qt", "" },
   { "Nm-connection-editor", "" },
   { "Xfce4-power-manager-settings", "" },
+  { "Lxappearance", "" },
+  { "qt5ct", "" },
   { "fcitx5-config-qt", "" },
   { "pavucontrol-qt", "" },
   { "Tlp-UI", "" },
@@ -93,7 +95,7 @@ static const TagMapEntry tagnamemap[] = {
   { "netease-cloud-music", "" },
   { "QQ", "" },
   { "VirtualBox Manager", "練" },
-  { "VirtualBox Machine", "練" },
+  { "Tor Browser", "" },
 };
 
 // https://dwm.suckless.org/customisation/rules/
