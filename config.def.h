@@ -13,10 +13,10 @@ static const unsigned int gappih    = 10;       /* horiz inner gap between windo
 static const unsigned int gappiv    = 10;       /* vert inner gap between windows */
 static const unsigned int gappoh    = 10;       /* horiz outer gap between windows and screen edge */
 static const unsigned int gappov    = 10;       /* vert outer gap between windows and screen edge */
-static const int movewinthresholdv  = 8; /* 垂直：这个阈值越大movewin操作改变的范围越小 */
-static const int movewinthresholdh  = 8; /* 水平：这个阈值越大movewin操作改变的范围越小 */
-static const int resizewinthresholdv= 10; /* 垂直：这个阈值越大resizewin操作改变的范围越小 */
-static const int resizewinthresholdh= 20; /* 水平：这个阈值越大resizewin操作改变的范围越小 */
+static const int movewinthresholdv  = 12; /* 垂直：这个阈值越大movewin操作改变的范围越小 */
+static const int movewinthresholdh  = 16; /* 水平：这个阈值越大movewin操作改变的范围越小 */
+static const int resizewinthresholdv= 20; /* 垂直：这个阈值越大resizewin操作改变的范围越小 */
+static const int resizewinthresholdh= 40; /* 水平：这个阈值越大resizewin操作改变的范围越小 */
 static const char *fonts[]          = { "SauceCodePro Nerd Font Mono:pixelsize=32" };
 static const char dmenufont[]       = "SauceCodePro Nerd Font Mono:pixelsize=32";
 // 淡雅灰配色
@@ -84,6 +84,7 @@ static const TagMapEntry tagnamemap[] = {
   { "qt5ct", "" },
   { "fcitx5-config-qt", "" },
   { "pavucontrol-qt", "" },
+  { "Pavucontrol", "" },
   { "Tlp-UI", "" },
   { "flameshot", "" },
   { "Peek", "" },
@@ -95,6 +96,8 @@ static const TagMapEntry tagnamemap[] = {
   { "netease-cloud-music", "" },
   { "QQ", "" },
   { "VirtualBox Manager", "練" },
+  { "VirtualBox Machine", "練" },
+  { "VirtualBox", "練" },
   { "Tor Browser", "" },
 };
 
@@ -154,18 +157,24 @@ static const char *rofi_run[] = { "rofi", "-show", "run", NULL };
 static const char *rofi_drun[] = { "rofi", "-show", "drun", NULL };
 static const char *rofi_ssh[] = { "rofi", "-show", "ssh", NULL };
 // static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "st", NULL };
-static const char *termcmd[]  = { "st", NULL };
+// static const char *termcmd[]  = { "st", NULL };
 // static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "alacritty", NULL };
-// static const char *termcmd[]  = { "alacritty", NULL };
+static const char *termcmd[]  = { "alacritty", NULL };
 static const char scratchpadname[] = "scratchpad";
 // static const char *scratchpadcmd[] = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "st", "-t", scratchpadname, "-g", "120x34", NULL };
-static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
+// static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
 // static const char *scratchpadcmd[] = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "alacritty", "-t", scratchpadname, NULL };
-// static const char *scratchpadcmd[] = { "alacritty", "-t", scratchpadname, NULL };
-static const char *flameshotcmd[] = { "env", "QT_AUTO_SCREEN_SCALE_FACTOR=0", "QT_SCREEN_SCALE_FACTORS=''", "flameshot", "gui", NULL };
-static const char *flameshotocrcmd[] = { "flameshotocr.sh", NULL };
+static const char *scratchpadcmd[] = { "alacritty", "-t", scratchpadname, NULL };
+static const char *flameshotcmd[] = { "flameshot-wrapper.sh", "gui", NULL };
+static const char *flameshotocrcmd[] = { "flameshot-ocr.sh", NULL };
 static const char *monitorswitch1[] = { "monitor-switch.sh", "1", NULL };
 static const char *monitorswitch2[] = { "monitor-switch.sh", "2", NULL };
+static const char *wpchange[] = { "wp-change.sh", NULL };
+static const char *mouseclick1[] = { "xdotool", "click", "1", NULL }; // 鼠标左键点击
+static const char *mouseclick2[] = { "xdotool", "click", "2", NULL }; // 鼠标中键点击
+static const char *mouseclick3[] = { "xdotool", "click", "3", NULL }; // 鼠标右键点击
+// static const char *mouseclick4[] = { "xdotool", "click", "4", NULL }; // 鼠标上滚轮
+// static const char *mouseclick5[] = { "xdotool", "click", "5", NULL }; // 鼠标下滚轮
 
 /* 
  * xev命令可以获取keycode
@@ -187,8 +196,11 @@ static const Key keys[] = {
   { MODKEY,                       XK_grave,     togglescratch,   {.v = scratchpadcmd } }, // 打开临时命令行窗口
   { MODKEY,                       XK_Print,     spawn,           {.v = flameshotocrcmd } }, // 截图ocr
   { NOMODKEY,                     XK_Print,     spawn,           {.v = flameshotcmd } }, // 截图
+  { MODKEY|ShiftMask,             XK_a,         spawn,           {.v = flameshotocrcmd } }, // 截图ocr
+  { MODKEY,                       XK_a,         spawn,           {.v = flameshotcmd } }, // 截图
   { Mod4Mask,                     XK_1,         spawn,           {.v = monitorswitch1 } }, // 屏幕检测，单监视器
   { Mod4Mask,                     XK_2,         spawn,           {.v = monitorswitch2 } }, // 屏幕检测，双监视器
+  { Mod4Mask,                     XK_c,         spawn,           {.v = wpchange } }, // 切换壁纸
   { MODKEY,                       XK_b,         togglebar,       {0} }, // 状态栏开关
   { MODKEY,                       XK_j,         focusstack,      {.i = +1 } }, // 向栈底移动
   { MODKEY,                       XK_k,         focusstack,      {.i = -1 } }, // 向栈顶移动
@@ -196,11 +208,11 @@ static const Key keys[] = {
   { MODKEY,                       XK_d,         incnmaster,      {.i = -1 } }, // 减少主工作区数量
   { MODKEY,                       XK_h,         setmfact,        {.f = -0.05} }, // 减少主工作区空间
   { MODKEY,                       XK_l,         setmfact,        {.f = +0.05} }, // 增加主工作区空间
-  { Mod4Mask|ShiftMask,           XK_BackSpace, togglesmartgaps, {0} }, // 智能间隙开关（仅有一个client时是否显示间隙）
-  { Mod4Mask,                     XK_BackSpace, togglegaps,      {0} }, // 间隙开关
-  { Mod4Mask,                     XK_0,         defaultgaps,     {0} }, // 重置间隙
-  { Mod4Mask,                     XK_equal,     incrgaps,        {.i = +1 } }, // 增大间隙
-  { Mod4Mask,                     XK_minus,     incrgaps,        {.i = -1 } }, // 减少间隙
+  { MODKEY|Mod4Mask|ShiftMask,    XK_BackSpace, togglesmartgaps, {0} }, // 智能间隙开关（仅有一个client时是否显示间隙）
+  { MODKEY|Mod4Mask,              XK_BackSpace, togglegaps,      {0} }, // 间隙开关
+  { MODKEY|Mod4Mask,              XK_0,         defaultgaps,     {0} }, // 重置间隙
+  { MODKEY|Mod4Mask,              XK_equal,     incrgaps,        {.i = +1 } }, // 增大间隙
+  { MODKEY|Mod4Mask,              XK_minus,     incrgaps,        {.i = -1 } }, // 减少间隙
   // { MODKEY|Mod4Mask,              XK_h,         incrgaps,        {.i = +1 } },
   // { MODKEY|Mod4Mask,              XK_l,         incrgaps,        {.i = -1 } },
   // { MODKEY|Mod4Mask|ShiftMask,    XK_h,         incrogaps,       {.i = +1 } },
@@ -226,16 +238,26 @@ static const Key keys[] = {
   { Mod4Mask,                     XK_j,         movewin,         {.ui = DOWN} },     // 向下移动窗口
   { Mod4Mask,                     XK_h,         movewin,         {.ui = LEFT} },     // 向左移动窗口
   { Mod4Mask,                     XK_l,         movewin,         {.ui = RIGHT} },    // 向右移动窗口
-  { Mod4Mask|ShiftMask,           XK_Up,        resizewin,       {.ui = V_REDUCE} }, // 垂直减少窗口大小
-  { Mod4Mask|ShiftMask,           XK_Down,      resizewin,       {.ui = V_EXPAND} }, // 垂直增加窗口大小
-  { Mod4Mask|ShiftMask,           XK_Left,      resizewin,       {.ui = H_REDUCE} }, // 水平减少窗口大小
-  { Mod4Mask|ShiftMask,           XK_Right,     resizewin,       {.ui = H_EXPAND} }, // 水平增加窗口大小
-  { Mod4Mask|ShiftMask,           XK_k,         resizewin,       {.ui = V_REDUCE} }, // 垂直减少窗口大小
-  { Mod4Mask|ShiftMask,           XK_j,         resizewin,       {.ui = V_EXPAND} }, // 垂直增加窗口大小
-  { Mod4Mask|ShiftMask,           XK_h,         resizewin,       {.ui = H_REDUCE} }, // 水平减少窗口大小
-  { Mod4Mask|ShiftMask,           XK_l,         resizewin,       {.ui = H_EXPAND} }, // 水平增加窗口大小
-  { MODKEY,                       XK_Tab,       switchprevclient,{0} }, // 切换到上一个聚焦窗口
-  { MODKEY|ShiftMask,             XK_Tab,       view,            {0} }, // 切换到上一个tag
+  { Mod4Mask,                     XK_minus,     resizewin,       {.ui = V_REDUCE} }, // 垂直减少窗口大小
+  { Mod4Mask,                     XK_equal,     resizewin,       {.ui = V_EXPAND} }, // 垂直增加窗口大小
+  { Mod4Mask|ShiftMask,           XK_minus,     resizewin,       {.ui = H_REDUCE} }, // 水平减少窗口大小
+  { Mod4Mask|ShiftMask,           XK_equal,     resizewin,       {.ui = H_EXPAND} }, // 水平增加窗口大小
+  { Mod4Mask|ShiftMask,           XK_1,         spawn,           {.v = mouseclick1} }, // 鼠标左键点击
+  { Mod4Mask|ShiftMask,           XK_2,         spawn,           {.v = mouseclick2} }, // 鼠标中键点击
+  { Mod4Mask|ShiftMask,           XK_3,         spawn,           {.v = mouseclick3} }, // 鼠标右键点击
+  // { Mod4Mask|ShiftMask,           XK_4,         spawn,           {.v = mouseclick4} }, // 鼠标右键点击
+  // { Mod4Mask|ShiftMask,           XK_5,         spawn,           {.v = mouseclick5} }, // 鼠标右键点击
+  { Mod4Mask|ShiftMask,           XK_f,         mousefocus,      {0} }, // 鼠标聚焦到当前选中窗口
+  { Mod4Mask|ShiftMask,           XK_k,         mousemove,       {.ui = 0} }, // 向上移动鼠标光标
+  { Mod4Mask|ShiftMask,           XK_l,         mousemove,       {.ui = 1} }, // 向右移动鼠标光标
+  { Mod4Mask|ShiftMask,           XK_j,         mousemove,       {.ui = 2} }, // 向下移动鼠标光标
+  { Mod4Mask|ShiftMask,           XK_h,         mousemove,       {.ui = 3} }, // 向左移动鼠标光标
+  // { MODKEY|Mod4Mask|ShiftMask,    XK_k,         mousemove,       {.ui = 8} }, // 向上移动鼠标光标-加速版
+  // { MODKEY|Mod4Mask|ShiftMask,    XK_l,         mousemove,       {.ui = 9} }, // 向右移动鼠标光标-加速版
+  // { MODKEY|Mod4Mask|ShiftMask,    XK_j,         mousemove,       {.ui = 10} }, // 向下移动鼠标光标-加速版
+  // { MODKEY|Mod4Mask|ShiftMask,    XK_h,         mousemove,       {.ui = 11} }, // 向左移动鼠标光标-加速版
+  { MODKEY,                       XK_Tab,       view,            {0} }, // 切换到上一个tag
+  { Mod4Mask,                     XK_Tab,       switchprevclient,{0} }, // 切换到上一个聚焦窗口
   // { NOMODKEY,                     XK_Super_L,   toggleoverview,  {0} },
   { Mod4Mask,                     XK_w,         toggleoverview,  {0} },
   { MODKEY|ShiftMask,             XK_c,         killclient,      {0} },
@@ -270,6 +292,9 @@ static const Key keys[] = {
 
 /* button definitions */
 /* click can be ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle, ClkClientWin, or ClkRootWin */
+// Button1 -> 左键
+// Button2 -> 中键
+// Button3 -> 右键
 static const Button buttons[] = {
   /* click                event mask      button          function        argument */
   { ClkLtSymbol,          0,              Button1,        setlayout,      {0} },

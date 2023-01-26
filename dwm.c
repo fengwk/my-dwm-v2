@@ -328,6 +328,8 @@ static void xinitvisual();
 static void zoom(const Arg *arg);
 static void movewin(const Arg *arg);
 static void resizewin(const Arg *arg);
+static void mousefocus(const Arg *arg);
+static void mousemove(const Arg *arg);
 static const char* gettagdisplayname(Client* c);
 
 /* variables */
@@ -3498,6 +3500,34 @@ resizewin(const Arg *arg)
         nh = selmon->wy + selmon->wh - c->y - 2 * c->bw;
     resize(c, c->x, c->y, nw, nh, 1);
     pointerfocuswin(c);
+}
+
+void
+mousefocus(const Arg *arg) {
+  if (selmon && selmon->sel) {
+    Client *c = selmon->sel;
+    XWarpPointer(dpy, None, root, 0, 0, 0, 0, c->x + c->w / 2, c->y + c->h / 2);
+  }
+}
+
+void
+mousemove(const Arg *arg) {
+  if (arg) {
+    int x, y;
+    getrootptr(&x, &y);
+    int dir = arg->ui % 4;
+    int step = (arg->ui / 4 + 1) * 35;
+    if (dir == 0) { // 上
+      y -= step;
+    } else if (dir == 1) { // 右
+      x += step;
+    } else if (dir == 2) { // 下
+      y += step;
+    } else { // 左
+      x -= step;
+    }
+    XWarpPointer(dpy, None, root, 0, 0, 0, 0, x, y);
+  }
 }
 
 int
