@@ -173,8 +173,8 @@ static const char *wpchange[] = { "wp-change.sh", NULL };
 static const char *mouseclick1[] = { "xdotool", "click", "1", NULL }; // 鼠标左键点击
 static const char *mouseclick2[] = { "xdotool", "click", "2", NULL }; // 鼠标中键点击
 static const char *mouseclick3[] = { "xdotool", "click", "3", NULL }; // 鼠标右键点击
-// static const char *mouseclick4[] = { "xdotool", "click", "4", NULL }; // 鼠标上滚轮
-// static const char *mouseclick5[] = { "xdotool", "click", "5", NULL }; // 鼠标下滚轮
+
+static const int mousemovequick = 3; // 鼠标移动加速倍数
 
 /* 
  * xev命令可以获取keycode
@@ -185,32 +185,33 @@ static const char *mouseclick3[] = { "xdotool", "click", "3", NULL }; // 鼠标�
  */
 static const Key keys[] = {
   /* modifier                     key           function         argument */
-  // { MODKEY,                       XK_p,         spawn,           {.v = dmenucmd } },
+
+  /* rofi */
   { MODKEY,                       XK_w,         spawn,           {.v = rofi_win } },
   { MODKEY,                       XK_p,         spawn,           {.v = rofi_run } },
   { MODKEY|ShiftMask,             XK_p,         spawn,           {.v = rofi_drun } },
   { MODKEY,                       XK_s,         spawn,           {.v = rofi_ssh } },
+
+  /* terminal */
   { MODKEY|ShiftMask,             XK_Return,    spawn,           {.v = termcmd } },
   { MODKEY|ShiftMask,             XK_KP_Enter,  spawn,           {.v = termcmd } },
-  { MODKEY|ShiftMask,             XK_f,         fullscreen,      {0} }, // 全屏
   { MODKEY,                       XK_grave,     togglescratch,   {.v = scratchpadcmd } }, // 打开临时命令行窗口
+
+  /* 截图 ocr */
   { MODKEY,                       XK_Print,     spawn,           {.v = flameshotocrcmd } }, // 截图ocr
-  { NOMODKEY,                     XK_Print,     spawn,           {.v = flameshotcmd } }, // 截图
+  { NOMODKEY,                     XK_Print,     spawn,           {.v = flameshotcmd } },    // 截图
   { MODKEY|ShiftMask,             XK_a,         spawn,           {.v = flameshotocrcmd } }, // 截图ocr
-  { MODKEY,                       XK_a,         spawn,           {.v = flameshotcmd } }, // 截图
+  { MODKEY,                       XK_a,         spawn,           {.v = flameshotcmd } },    // 截图
+
+  /* monitor */
   { Mod4Mask,                     XK_1,         spawn,           {.v = monitorswitch1 } }, // 屏幕检测，单监视器
   { Mod4Mask,                     XK_2,         spawn,           {.v = monitorswitch2 } }, // 屏幕检测，双监视器
-  { Mod4Mask,                     XK_c,         spawn,           {.v = wpchange } }, // 切换壁纸
-  { MODKEY,                       XK_b,         togglebar,       {0} }, // 状态栏开关
-  { MODKEY,                       XK_j,         focusstack,      {.i = +1 } }, // 向栈底移动
-  { MODKEY,                       XK_k,         focusstack,      {.i = -1 } }, // 向栈顶移动
-  { MODKEY,                       XK_i,         incnmaster,      {.i = +1 } }, // 增加主工作区数量
-  { MODKEY,                       XK_d,         incnmaster,      {.i = -1 } }, // 减少主工作区数量
-  { MODKEY,                       XK_h,         setmfact,        {.f = -0.05} }, // 减少主工作区空间
-  { MODKEY,                       XK_l,         setmfact,        {.f = +0.05} }, // 增加主工作区空间
-  { MODKEY|Mod4Mask|ShiftMask,    XK_BackSpace, togglesmartgaps, {0} }, // 智能间隙开关（仅有一个client时是否显示间隙）
-  { MODKEY|Mod4Mask,              XK_BackSpace, togglegaps,      {0} }, // 间隙开关
-  { MODKEY|Mod4Mask,              XK_0,         defaultgaps,     {0} }, // 重置间隙
+  { Mod4Mask,                     XK_c,         spawn,           {.v = wpchange } },       // 切换壁纸
+
+  /* 间隙调整 */
+  { MODKEY|Mod4Mask|ShiftMask,    XK_BackSpace, togglesmartgaps, {0} },        // 智能间隙开关（仅有一个client时是否显示间隙）
+  { MODKEY|Mod4Mask,              XK_BackSpace, togglegaps,      {0} },        // 间隙开关
+  { MODKEY|Mod4Mask,              XK_0,         defaultgaps,     {0} },        // 重置间隙
   { MODKEY|Mod4Mask,              XK_equal,     incrgaps,        {.i = +1 } }, // 增大间隙
   { MODKEY|Mod4Mask,              XK_minus,     incrgaps,        {.i = -1 } }, // 减少间隙
   // { MODKEY|Mod4Mask,              XK_h,         incrgaps,        {.i = +1 } },
@@ -227,8 +228,8 @@ static const Key keys[] = {
   // { MODKEY|Mod4Mask,              XK_o,         incrohgaps,      {.i = -1 } }, // 缩小垂直外侧间隙
   // { MODKEY|ShiftMask,             XK_y,         incrovgaps,      {.i = +1 } }, // 增大水平外侧间隙
   // { MODKEY|ShiftMask,             XK_o,         incrovgaps,      {.i = -1 } }, // 缩小水平外侧间隙
-  { MODKEY,                       XK_Return,    zoom,            {0} },
-  { MODKEY,                       XK_KP_Enter,  zoom,            {0} },
+
+  /* 窗口控制 */
   { Mod4Mask,                     XK_f,         togglefloating,  {0} },              // 窗口浮动开关
   { Mod4Mask,                     XK_Up,        movewin,         {.ui = UP} },       // 向上移动窗口
   { Mod4Mask,                     XK_Down,      movewin,         {.ui = DOWN} },     // 向下移动窗口
@@ -238,46 +239,69 @@ static const Key keys[] = {
   { Mod4Mask,                     XK_j,         movewin,         {.ui = DOWN} },     // 向下移动窗口
   { Mod4Mask,                     XK_h,         movewin,         {.ui = LEFT} },     // 向左移动窗口
   { Mod4Mask,                     XK_l,         movewin,         {.ui = RIGHT} },    // 向右移动窗口
-  { Mod4Mask,                     XK_minus,     resizewin,       {.ui = V_REDUCE} }, // 垂直减少窗口大小
-  { Mod4Mask,                     XK_equal,     resizewin,       {.ui = V_EXPAND} }, // 垂直增加窗口大小
-  { Mod4Mask|ShiftMask,           XK_minus,     resizewin,       {.ui = H_REDUCE} }, // 水平减少窗口大小
-  { Mod4Mask|ShiftMask,           XK_equal,     resizewin,       {.ui = H_EXPAND} }, // 水平增加窗口大小
-  { Mod4Mask|ShiftMask,           XK_1,         spawn,           {.v = mouseclick1} }, // 鼠标左键点击
-  { Mod4Mask|ShiftMask,           XK_2,         spawn,           {.v = mouseclick2} }, // 鼠标中键点击
-  { Mod4Mask|ShiftMask,           XK_3,         spawn,           {.v = mouseclick3} }, // 鼠标右键点击
-  // { Mod4Mask|ShiftMask,           XK_4,         spawn,           {.v = mouseclick4} }, // 鼠标右键点击
-  // { Mod4Mask|ShiftMask,           XK_5,         spawn,           {.v = mouseclick5} }, // 鼠标右键点击
-  { Mod4Mask|ShiftMask,           XK_f,         mousefocus,      {0} }, // 鼠标聚焦到当前选中窗口
-  { Mod4Mask|ShiftMask,           XK_k,         mousemove,       {.ui = 0} }, // 向上移动鼠标光标
-  { Mod4Mask|ShiftMask,           XK_l,         mousemove,       {.ui = 1} }, // 向右移动鼠标光标
-  { Mod4Mask|ShiftMask,           XK_j,         mousemove,       {.ui = 2} }, // 向下移动鼠标光标
-  { Mod4Mask|ShiftMask,           XK_h,         mousemove,       {.ui = 3} }, // 向左移动鼠标光标
-  // { MODKEY|Mod4Mask|ShiftMask,    XK_k,         mousemove,       {.ui = 8} }, // 向上移动鼠标光标-加速版
-  // { MODKEY|Mod4Mask|ShiftMask,    XK_l,         mousemove,       {.ui = 9} }, // 向右移动鼠标光标-加速版
-  // { MODKEY|Mod4Mask|ShiftMask,    XK_j,         mousemove,       {.ui = 10} }, // 向下移动鼠标光标-加速版
-  // { MODKEY|Mod4Mask|ShiftMask,    XK_h,         mousemove,       {.ui = 11} }, // 向左移动鼠标光标-加速版
-  { MODKEY,                       XK_Tab,       view,            {0} }, // 切换到上一个tag
-  { Mod4Mask,                     XK_Tab,       switchprevclient,{0} }, // 切换到上一个聚焦窗口
-  // { NOMODKEY,                     XK_Super_L,   toggleoverview,  {0} },
-  { Mod4Mask,                     XK_w,         toggleoverview,  {0} },
+  { Mod4Mask|ShiftMask,           XK_k,         resizewin,       {.ui = V_REDUCE} }, // 垂直减少窗口大小
+  { Mod4Mask|ShiftMask,           XK_j,         resizewin,       {.ui = V_EXPAND} }, // 垂直增加窗口大小
+  { Mod4Mask|ShiftMask,           XK_h,         resizewin,       {.ui = H_REDUCE} }, // 水平减少窗口大小
+  { Mod4Mask|ShiftMask,           XK_l,         resizewin,       {.ui = H_EXPAND} }, // 水平增加窗口大小
+  { Mod4Mask|ShiftMask,           XK_Up,        resizewin,       {.ui = V_REDUCE} }, // 垂直减少窗口大小
+  { Mod4Mask|ShiftMask,           XK_Down,      resizewin,       {.ui = V_EXPAND} }, // 垂直增加窗口大小
+  { Mod4Mask|ShiftMask,           XK_Left,      resizewin,       {.ui = H_REDUCE} }, // 水平减少窗口大小
+  { Mod4Mask|ShiftMask,           XK_Right,     resizewin,       {.ui = H_EXPAND} }, // 水平增加窗口大小
+
+  /* 鼠标控制 */
+  { MODKEY|Mod4Mask,              XK_1,         spawn,           {.v = mouseclick1} },  // 鼠标左键点击
+  { MODKEY|Mod4Mask,              XK_2,         spawn,           {.v = mouseclick2} },  // 鼠标中键点击
+  { MODKEY|Mod4Mask,              XK_3,         spawn,           {.v = mouseclick3} },  // 鼠标右键点击
+  { MODKEY|Mod4Mask,              XK_f,         mousefocus,      {0} },                 // 鼠标聚焦到当前选中窗口
+  { MODKEY|Mod4Mask,              XK_k,         mousemove,       {.ui = MOUSE_UP} },    // 向上移动鼠标光标
+  { MODKEY|Mod4Mask,              XK_l,         mousemove,       {.ui = MOUSE_RIGHT} }, // 向右移动鼠标光标
+  { MODKEY|Mod4Mask,              XK_j,         mousemove,       {.ui = MOUSE_DOWM} },  // 向下移动鼠标光标
+  { MODKEY|Mod4Mask,              XK_h,         mousemove,       {.ui = MOUSE_LEFT} },  // 向左移动鼠标光标
+  { MODKEY|Mod4Mask,              XK_Up,        mousemove,       {.ui = MOUSE_UP} },    // 向上移动鼠标光标
+  { MODKEY|Mod4Mask,              XK_Right,     mousemove,       {.ui = MOUSE_RIGHT} }, // 向右移动鼠标光标
+  { MODKEY|Mod4Mask,              XK_Down,      mousemove,       {.ui = MOUSE_DOWM} },  // 向下移动鼠标光标
+  { MODKEY|Mod4Mask,              XK_Left,      mousemove,       {.ui = MOUSE_LEFT} },  // 向左移动鼠标光标
+  { MODKEY|Mod4Mask|ShiftMask,    XK_k,         mousemove,       {.ui = MOUSE_UP + 4*mousemovequick} },    // 向上移动鼠标光标-加速版
+  { MODKEY|Mod4Mask|ShiftMask,    XK_l,         mousemove,       {.ui = MOUSE_RIGHT + 4*mousemovequick} }, // 向右移动鼠标光标-加速版
+  { MODKEY|Mod4Mask|ShiftMask,    XK_j,         mousemove,       {.ui = MOUSE_DOWM + 4*mousemovequick} },  // 向下移动鼠标光标-加速版
+  { MODKEY|Mod4Mask|ShiftMask,    XK_h,         mousemove,       {.ui = MOUSE_LEFT + 4*mousemovequick} },  // 向左移动鼠标光标-加速版
+  { MODKEY|Mod4Mask|ShiftMask,    XK_Up,        mousemove,       {.ui = MOUSE_UP + 4*mousemovequick} },    // 向上移动鼠标光标-加速版
+  { MODKEY|Mod4Mask|ShiftMask,    XK_Right,     mousemove,       {.ui = MOUSE_RIGHT + 4*mousemovequick} }, // 向右移动鼠标光标-加速版
+  { MODKEY|Mod4Mask|ShiftMask,    XK_Down,      mousemove,       {.ui = MOUSE_DOWM + 4*mousemovequick} },  // 向下移动鼠标光标-加速版
+  { MODKEY|Mod4Mask|ShiftMask,    XK_Left,      mousemove,       {.ui = MOUSE_LEFT + 4*mousemovequick} },  // 向左移动鼠标光标-加速版
+
+  /* 窗口管理 */
+  { MODKEY|ShiftMask,             XK_f,         fullscreen,      {0} },          // 全屏
+  { MODKEY,                       XK_b,         togglebar,       {0} },          // 状态栏开关
+  { MODKEY,                       XK_j,         focusstack,      {.i = +1 } },   // 向栈底移动
+  { MODKEY,                       XK_k,         focusstack,      {.i = -1 } },   // 向栈顶移动
+  { MODKEY,                       XK_i,         incnmaster,      {.i = +1 } },   // 增加主工作区数量
+  { MODKEY,                       XK_d,         incnmaster,      {.i = -1 } },   // 减少主工作区数量
+  { MODKEY,                       XK_h,         setmfact,        {.f = -0.05} }, // 减少主工作区空间
+  { MODKEY,                       XK_l,         setmfact,        {.f = +0.05} }, // 增加主工作区空间
+  { MODKEY,                       XK_Return,    zoom,            {0} },          // 交换选中窗口与栈顶窗口
+  { MODKEY,                       XK_KP_Enter,  zoom,            {0} },
+  { Mod4Mask,                     XK_w,         toggleoverview,  {0} },          // 窗口预览
+  { MODKEY,                       XK_Tab,       view,            {0} },          // 切换到上一个tag
+  { Mod4Mask,                     XK_Tab,       switchprevclient,{0} },          // 切换到上一个聚焦窗口
   { MODKEY|ShiftMask,             XK_c,         killclient,      {0} },
-  { MODKEY,                       XK_t,         setlayout,       {.v = &layouts[0]} },
-  { MODKEY,                       XK_f,         setlayout,       {.v = &layouts[3]} },
-  { MODKEY,                       XK_m,         setlayout,       {.v = &layouts[1]} },
-  { MODKEY,                       XK_g,         setlayout,       {.v = &layouts[2]} },
-  { MODKEY,                       XK_space,     setlayout,       {0} },
-  { MODKEY,                       XK_0,         view,            {.ui = ~0 } },
-  { MODKEY|ShiftMask,             XK_0,         tag,             {.ui = ~0 } },
-  { MODKEY,                       XK_comma,     focusmon,        {.i = -1 } },
-  { MODKEY,                       XK_period,    focusmon,        {.i = +1 } },
-  { MODKEY|ShiftMask,             XK_comma,     tagmon,          {.i = -1 } },
-  { MODKEY|ShiftMask,             XK_period,    tagmon,          {.i = +1 } },
-  { MODKEY|ShiftMask,             XK_Left,      viewtoleft,      {0} },
-  { MODKEY|ShiftMask,             XK_Right,     viewtoright,     {0} },
-  { MODKEY|ShiftMask,             XK_h,         viewtoleft,      {0} },
-  { MODKEY|ShiftMask,             XK_l,         viewtoright,     {0} },
-  { MODKEY,                       XK_bracketleft,  viewtoleft,   {0} },
-  { MODKEY,                       XK_bracketright, viewtoright,  {0} },
+  { MODKEY,                       XK_t,         setlayout,       {.v = &layouts[0]} }, // 平铺布局
+  { MODKEY,                       XK_f,         setlayout,       {.v = &layouts[3]} }, // 浮动布局
+  { MODKEY,                       XK_m,         setlayout,       {.v = &layouts[1]} }, // monocle布局
+  { MODKEY,                       XK_g,         setlayout,       {.v = &layouts[2]} }, // grid布局
+  { MODKEY,                       XK_space,     setlayout,       {0} },                // 切换当前与上一个布局
+  { MODKEY,                       XK_0,         view,            {.ui = ~0 } },        // 预览所有tag
+  { MODKEY|ShiftMask,             XK_0,         tag,             {.ui = ~0 } },        // 改变当前窗口tag，0可以让当前窗口拥有所有tag
+  { MODKEY,                       XK_comma,     focusmon,        {.i = -1 } }, // 切到上一个监视器
+  { MODKEY,                       XK_period,    focusmon,        {.i = +1 } }, // 切到下一个监视器
+  { MODKEY|ShiftMask,             XK_comma,     tagmon,          {.i = -1 } }, // 将当前窗口发送到上一个监视器
+  { MODKEY|ShiftMask,             XK_period,    tagmon,          {.i = +1 } }, // 将当前窗口发送到下一个监视器
+  { MODKEY|ShiftMask,             XK_Left,      viewtoleft,      {0} }, // 切换到左侧tag
+  { MODKEY|ShiftMask,             XK_Right,     viewtoright,     {0} }, // 切换到右侧tag
+  { MODKEY|ShiftMask,             XK_h,         viewtoleft,      {0} }, // 切换到左侧tag
+  { MODKEY|ShiftMask,             XK_l,         viewtoright,     {0} }, // 切换到右侧tag
+  // { MODKEY,                       XK_bracketleft,  viewtoleft,   {0} },
+  // { MODKEY,                       XK_bracketright, viewtoright,  {0} },
   TAGKEYS(                        XK_1,                          0)
   TAGKEYS(                        XK_2,                          1)
   TAGKEYS(                        XK_3,                          2)

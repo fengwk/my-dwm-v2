@@ -90,6 +90,7 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
 enum { UP, DOWN, LEFT, RIGHT }; /* movewin */
 enum { V_EXPAND, V_REDUCE, H_EXPAND, H_REDUCE }; /* resizewins */
+enum { MOUSE_UP, MOUSE_RIGHT, MOUSE_DOWM, MOUSE_LEFT };
 
 typedef union {
 	int i;
@@ -283,7 +284,6 @@ static void spawn(const Arg *arg);
 static Monitor *systraytomon(Monitor *m);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
-static void pointerfocuswin(Client *c);
 static void tile(Monitor *m);
 static void grid(Monitor *m);
 static void togglebar(const Arg *arg);
@@ -326,6 +326,7 @@ static int xerrordummy(Display *dpy, XErrorEvent *ee);
 static int xerrorstart(Display *dpy, XErrorEvent *ee);
 static void xinitvisual();
 static void zoom(const Arg *arg);
+static int inarea(int x, int y, int rx, int ry, int rw, int rh);
 static void movewin(const Arg *arg);
 static void resizewin(const Arg *arg);
 static void mousefocus(const Arg *arg);
@@ -2419,18 +2420,6 @@ tagmon(const Arg *arg)
   switchclient(c);
 }
 
-// 光标定位
-void
-pointerfocuswin(Client *c)
-{
-  if (c) {
-    XWarpPointer(dpy, None, root, 0, 0, 0, 0, c->x + c->w / 2, c->y + c->h / 2);
-    focus(c);
-  } else {
-    XWarpPointer(dpy, None, root, 0, 0, 0, 0, selmon->wx + selmon->ww / 2, selmon->wy + selmon->wh / 2);
-  }
-}
-
 /**
  * 网格布局
  */
@@ -3430,19 +3419,25 @@ zoom(const Arg *arg)
 	pop(c);
 }
 
+int
+inarea(int x, int y, int rx, int ry, int rw, int rh) {
+  return x > rx && x < rx + rw && y > ry && y < ry + rh;
+}
+
 void
 movewin(const Arg *arg)
 {
     Client *c;
-    int nx, ny;
+    int x, y, nx, ny;
+    int px, py;
 
     c = selmon->sel;
     if (!c || c->isfullscreen)
         return;
     if (!c->isfloating)
         togglefloating(NULL);
-    nx = c->x;
-    ny = c->y;
+    x = nx = c->x;
+    y = ny = c->y;
     switch (arg->ui) {
         case UP:
             ny -= c->mon->wh / movewinthresholdv;
@@ -3462,22 +3457,26 @@ movewin(const Arg *arg)
             break;
     }
     resize(c, nx, ny, c->w, c->h, 1);
-    pointerfocuswin(c);
+    getrootptr(&px, &py);
+    if (inarea(px, py, x, y, c->w, c->h)) {
+      XWarpPointer(dpy, None, root, 0, 0, 0, 0, nx - x + px, ny - y + py);
+    }
 }
 
 void
 resizewin(const Arg *arg)
 {
     Client *c;
-    int nh, nw;
+    int w, h, nw, nh;
+    int px, py;
 
     c = selmon->sel;
     if (!c || c->isfullscreen)
         return;
     if (!c->isfloating)
         togglefloating(NULL);
-    nw = c->w;
-    nh = c->h;
+    w = nw = c->w;
+    h = nh = c->h;
     switch (arg->ui) {
         case H_EXPAND:
             nw += selmon->wh / resizewinthresholdv;
@@ -3499,7 +3498,14 @@ resizewin(const Arg *arg)
     if (c->y + nh + 2 * c->bw > selmon->wy + selmon->wh)
         nh = selmon->wy + selmon->wh - c->y - 2 * c->bw;
     resize(c, c->x, c->y, nw, nh, 1);
-    pointerfocuswin(c);
+    getrootptr(&px, &py);
+    if (inarea(px, py, c->x, c->y, w, h)) {
+      px = MAX(px, c->x + 1);
+      px = MIN(px, c->x + nw - 1);
+      py = MAX(py, c->y + 1);
+      py = MIN(py, c->y + nh - 1);
+      XWarpPointer(dpy, None, root, 0, 0, 0, 0, px, py);
+    }
 }
 
 void
@@ -3517,13 +3523,13 @@ mousemove(const Arg *arg) {
     getrootptr(&x, &y);
     int dir = arg->ui % 4;
     int step = (arg->ui / 4 + 1) * 35;
-    if (dir == 0) { // 上
+    if (dir == MOUSE_UP) {
       y -= step;
-    } else if (dir == 1) { // 右
+    } else if (dir == MOUSE_RIGHT) {
       x += step;
-    } else if (dir == 2) { // 下
+    } else if (dir == MOUSE_DOWM) {
       y += step;
-    } else { // 左
+    } else {
       x -= step;
     }
     XWarpPointer(dpy, None, root, 0, 0, 0, 0, x, y);
