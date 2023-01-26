@@ -102,6 +102,7 @@ static const TagMapEntry tagnamemap[] = {
   { "VirtualBox Machine", "練" },
   { "VirtualBox", "練" },
   { "Tor Browser", "" },
+  { "Clash for Windows", "" },
 };
 
 // https://dwm.suckless.org/customisation/rules/
@@ -232,14 +233,14 @@ static const Key keys[] = {
 
   /* 窗口控制 */
   { Mod4Mask,                     XK_f,         togglefloating,  {0} },              // 窗口浮动开关
-  { Mod4Mask,                     XK_Up,        movewin,         {.ui = UP} },       // 向上移动窗口
-  { Mod4Mask,                     XK_Down,      movewin,         {.ui = DOWN} },     // 向下移动窗口
-  { Mod4Mask,                     XK_Left,      movewin,         {.ui = LEFT} },     // 向左移动窗口
-  { Mod4Mask,                     XK_Right,     movewin,         {.ui = RIGHT} },    // 向右移动窗口
-  { Mod4Mask,                     XK_k,         movewin,         {.ui = UP} },       // 向上移动窗口
-  { Mod4Mask,                     XK_j,         movewin,         {.ui = DOWN} },     // 向下移动窗口
-  { Mod4Mask,                     XK_h,         movewin,         {.ui = LEFT} },     // 向左移动窗口
-  { Mod4Mask,                     XK_l,         movewin,         {.ui = RIGHT} },    // 向右移动窗口
+  { Mod4Mask,                     XK_Up,        movewin,         {.ui = WIN_UP} },       // 向上移动窗口
+  { Mod4Mask,                     XK_Down,      movewin,         {.ui = WIN_DOWN} },     // 向下移动窗口
+  { Mod4Mask,                     XK_Left,      movewin,         {.ui = WIN_LEFT} },     // 向左移动窗口
+  { Mod4Mask,                     XK_Right,     movewin,         {.ui = WIN_RIGHT} },    // 向右移动窗口
+  { Mod4Mask,                     XK_k,         movewin,         {.ui = WIN_UP} },       // 向上移动窗口
+  { Mod4Mask,                     XK_j,         movewin,         {.ui = WIN_DOWN} },     // 向下移动窗口
+  { Mod4Mask,                     XK_h,         movewin,         {.ui = WIN_LEFT} },     // 向左移动窗口
+  { Mod4Mask,                     XK_l,         movewin,         {.ui = WIN_RIGHT} },    // 向右移动窗口
   { Mod4Mask|ShiftMask,           XK_k,         resizewin,       {.ui = V_REDUCE} }, // 垂直减少窗口大小
   { Mod4Mask|ShiftMask,           XK_j,         resizewin,       {.ui = V_EXPAND} }, // 垂直增加窗口大小
   { Mod4Mask|ShiftMask,           XK_h,         resizewin,       {.ui = H_REDUCE} }, // 水平减少窗口大小
@@ -283,8 +284,9 @@ static const Key keys[] = {
   { MODKEY,                       XK_Return,    zoom,            {0} },          // 交换选中窗口与栈顶窗口
   { MODKEY,                       XK_KP_Enter,  zoom,            {0} },
   { Mod4Mask,                     XK_w,         toggleoverview,  {0} },          // 窗口预览
-  { MODKEY,                       XK_Tab,       view,            {0} },          // 切换到上一个tag
-  { Mod4Mask,                     XK_Tab,       switchprevclient,{0} },          // 切换到上一个聚焦窗口
+  // { MODKEY,                       XK_Tab,       view,            {0} },          // 切换到上一个tag
+  { MODKEY,                       XK_Tab,       switchprevclient,{.ui = 0} },    // 切换到上一个聚焦窗口
+  { MODKEY|ShiftMask,             XK_Tab,       switchprevclient,{.ui = 1} },    // 切换到上一个聚焦窗口-有限选择其它tag
   { MODKEY|ShiftMask,             XK_c,         killclient,      {0} },
   { MODKEY,                       XK_t,         setlayout,       {.v = &layouts[0]} }, // 平铺布局
   { MODKEY,                       XK_f,         setlayout,       {.v = &layouts[3]} }, // 浮动布局

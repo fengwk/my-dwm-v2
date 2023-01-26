@@ -88,9 +88,9 @@ enum { Manager, Xembed, XembedInfo, XLast }; /* Xembed atoms */
 enum { WMProtocols, WMDelete, WMState, WMTakeFocus, WMLast }; /* default atoms */
 enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
        ClkClientWin, ClkRootWin, ClkLast }; /* clicks */
-enum { UP, DOWN, LEFT, RIGHT }; /* movewin */
+enum { WIN_UP, WIN_DOWN, WIN_LEFT, WIN_RIGHT }; /* movewin */
 enum { V_EXPAND, V_REDUCE, H_EXPAND, H_REDUCE }; /* resizewins */
-enum { MOUSE_UP, MOUSE_RIGHT, MOUSE_DOWM, MOUSE_LEFT };
+enum { MOUSE_UP, MOUSE_RIGHT, MOUSE_DOWM, MOUSE_LEFT }; /* movemouse */
 
 typedef union {
 	int i;
@@ -3191,6 +3191,8 @@ switchprevclient(const Arg *arg) {
     return;
   }
 
+  unsigned int anothertag = arg->ui;
+
   // 如果当前窗口是dialog，找到非dialog的第2个窗口，如果没有第2个则取第1个
   // 如果当前窗口非dialog，找到第1个窗口
   Client *selc = selmon && selmon->sel ? selmon->sel : NULL;
@@ -3200,21 +3202,25 @@ switchprevclient(const Arg *arg) {
       f1 = f1->next;
     }
     ClientAccNode *f2 = f1 ? f1->next : NULL;
-    while (f2 && f2->c == selc) {
+    while (f2 && (f2->c == selc || (anothertag && ISVISIBLE(f1->c)))) {
       f2 = f2->next;
     }
     if (f2) {
       switchclient(f2->c);
     } else if (f1) {
       switchclient(f1->c);
+    } else if (anothertag) {
+      switchprevclient(&(Arg){.ui = 0});
     }
   } else {
     ClientAccNode *f = accstack;
-    while (f && f->c == selc) {
+    while (f && (f->c == selc || (anothertag && ISVISIBLE(f->c)))) {
       f = f->next;
     }
     if (f) {
       switchclient(f->c);
+    } else if (anothertag) {
+      switchprevclient(&(Arg){.ui = 0});
     }
   }
 }
@@ -3439,19 +3445,19 @@ movewin(const Arg *arg)
     x = nx = c->x;
     y = ny = c->y;
     switch (arg->ui) {
-        case UP:
+        case WIN_UP:
             ny -= c->mon->wh / movewinthresholdv;
             ny = MAX(ny, c->mon->wy - HEIGHT(c) * 0.9);
             break;
-        case DOWN:
+        case WIN_DOWN:
             ny += c->mon->wh / movewinthresholdv;
             ny = MIN(ny, c->mon->wy + c->mon->wh - HEIGHT(c) * 0.1);
             break;
-        case LEFT:
+        case WIN_LEFT:
             nx -= c->mon->ww / movewinthresholdh;
             nx = MAX(nx, c->mon->wx - WIDTH(c) * 0.9);
             break;
-        case RIGHT:
+        case WIN_RIGHT:
             nx += c->mon->ww / movewinthresholdh;
             nx = MIN(nx, c->mon->wx + c->mon->ww - WIDTH(c) * 0.1);
             break;
