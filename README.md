@@ -12,10 +12,10 @@
     sudo make clean install
     ```
 
-1. 安装渲染器
+1. 安装必要的命令
 
     ```shell
-    sudo pacman -S picom
+    sudo pacman -S picom xdotool rofi flameshot
     ```
 
 1. 配置`~/.xinitrc`

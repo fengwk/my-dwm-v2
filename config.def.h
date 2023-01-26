@@ -50,6 +50,9 @@ static const unsigned int alphas[][3]      = {
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
+/* 鼠标移动加速倍数 */
+static const int mousemovequick = 3;
+
 // 展示标签主客户端标题
 static const char ptagf[] = "%s %s";  /* format of a tag label */
 static const char etagf[] = "%s";  /* format of an empty tag */
@@ -173,8 +176,6 @@ static const char *wpchange[] = { "wp-change.sh", NULL };
 static const char *mouseclick1[] = { "xdotool", "click", "1", NULL }; // 鼠标左键点击
 static const char *mouseclick2[] = { "xdotool", "click", "2", NULL }; // 鼠标中键点击
 static const char *mouseclick3[] = { "xdotool", "click", "3", NULL }; // 鼠标右键点击
-
-static const int mousemovequick = 3; // 鼠标移动加速倍数
 
 /* 
  * xev命令可以获取keycode
