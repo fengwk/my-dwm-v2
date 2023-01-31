@@ -103,6 +103,7 @@ static const TagMapEntry tagnamemap[] = {
   { "VirtualBox", "練" },
   { "Tor Browser", "" },
   { "Clash for Windows", "" },
+  { "draw.io", "" },
 };
 
 // https://dwm.suckless.org/customisation/rules/
@@ -251,26 +252,26 @@ static const Key keys[] = {
   { Mod4Mask|ShiftMask,           XK_Right,     resizewin,       {.ui = H_EXPAND} }, // 水平增加窗口大小
 
   /* 鼠标控制 */
-  { MODKEY|Mod4Mask,              XK_1,         spawn,           {.v = mouseclick1} },  // 鼠标左键点击
-  { MODKEY|Mod4Mask,              XK_2,         spawn,           {.v = mouseclick2} },  // 鼠标中键点击
-  { MODKEY|Mod4Mask,              XK_3,         spawn,           {.v = mouseclick3} },  // 鼠标右键点击
-  { MODKEY|Mod4Mask,              XK_f,         mousefocus,      {0} },                 // 鼠标聚焦到当前选中窗口
-  { MODKEY|Mod4Mask,              XK_k,         mousemove,       {.ui = MOUSE_UP} },    // 向上移动鼠标光标
-  { MODKEY|Mod4Mask,              XK_l,         mousemove,       {.ui = MOUSE_RIGHT} }, // 向右移动鼠标光标
-  { MODKEY|Mod4Mask,              XK_j,         mousemove,       {.ui = MOUSE_DOWM} },  // 向下移动鼠标光标
-  { MODKEY|Mod4Mask,              XK_h,         mousemove,       {.ui = MOUSE_LEFT} },  // 向左移动鼠标光标
-  { MODKEY|Mod4Mask,              XK_Up,        mousemove,       {.ui = MOUSE_UP} },    // 向上移动鼠标光标
-  { MODKEY|Mod4Mask,              XK_Right,     mousemove,       {.ui = MOUSE_RIGHT} }, // 向右移动鼠标光标
-  { MODKEY|Mod4Mask,              XK_Down,      mousemove,       {.ui = MOUSE_DOWM} },  // 向下移动鼠标光标
-  { MODKEY|Mod4Mask,              XK_Left,      mousemove,       {.ui = MOUSE_LEFT} },  // 向左移动鼠标光标
-  { MODKEY|Mod4Mask|ShiftMask,    XK_k,         mousemove,       {.ui = MOUSE_UP + 4*mousemovequick} },    // 向上移动鼠标光标-加速版
-  { MODKEY|Mod4Mask|ShiftMask,    XK_l,         mousemove,       {.ui = MOUSE_RIGHT + 4*mousemovequick} }, // 向右移动鼠标光标-加速版
-  { MODKEY|Mod4Mask|ShiftMask,    XK_j,         mousemove,       {.ui = MOUSE_DOWM + 4*mousemovequick} },  // 向下移动鼠标光标-加速版
-  { MODKEY|Mod4Mask|ShiftMask,    XK_h,         mousemove,       {.ui = MOUSE_LEFT + 4*mousemovequick} },  // 向左移动鼠标光标-加速版
-  { MODKEY|Mod4Mask|ShiftMask,    XK_Up,        mousemove,       {.ui = MOUSE_UP + 4*mousemovequick} },    // 向上移动鼠标光标-加速版
-  { MODKEY|Mod4Mask|ShiftMask,    XK_Right,     mousemove,       {.ui = MOUSE_RIGHT + 4*mousemovequick} }, // 向右移动鼠标光标-加速版
-  { MODKEY|Mod4Mask|ShiftMask,    XK_Down,      mousemove,       {.ui = MOUSE_DOWM + 4*mousemovequick} },  // 向下移动鼠标光标-加速版
-  { MODKEY|Mod4Mask|ShiftMask,    XK_Left,      mousemove,       {.ui = MOUSE_LEFT + 4*mousemovequick} },  // 向左移动鼠标光标-加速版
+  { MODKEY|ControlMask,              XK_z,         spawn,           {.v = mouseclick1} },  // 鼠标左键点击
+  { MODKEY|ControlMask,              XK_x,         spawn,           {.v = mouseclick2} },  // 鼠标中键点击
+  { MODKEY|ControlMask,              XK_c,         spawn,           {.v = mouseclick3} },  // 鼠标右键点击
+  { MODKEY|ControlMask,              XK_f,         mousefocus,      {0} },                 // 鼠标聚焦到当前选中窗口
+  { MODKEY|ControlMask,              XK_k,         mousemove,       {.ui = MOUSE_UP} },    // 向上移动鼠标光标
+  { MODKEY|ControlMask,              XK_l,         mousemove,       {.ui = MOUSE_RIGHT} }, // 向右移动鼠标光标
+  { MODKEY|ControlMask,              XK_j,         mousemove,       {.ui = MOUSE_DOWM} },  // 向下移动鼠标光标
+  { MODKEY|ControlMask,              XK_h,         mousemove,       {.ui = MOUSE_LEFT} },  // 向左移动鼠标光标
+  { MODKEY|ControlMask,              XK_Up,        mousemove,       {.ui = MOUSE_UP} },    // 向上移动鼠标光标
+  { MODKEY|ControlMask,              XK_Right,     mousemove,       {.ui = MOUSE_RIGHT} }, // 向右移动鼠标光标
+  { MODKEY|ControlMask,              XK_Down,      mousemove,       {.ui = MOUSE_DOWM} },  // 向下移动鼠标光标
+  { MODKEY|ControlMask,              XK_Left,      mousemove,       {.ui = MOUSE_LEFT} },  // 向左移动鼠标光标
+  { MODKEY|ControlMask|ShiftMask,    XK_k,         mousemove,       {.ui = MOUSE_UP + 4*mousemovequick} },    // 向上移动鼠标光标-加速版
+  { MODKEY|ControlMask|ShiftMask,    XK_l,         mousemove,       {.ui = MOUSE_RIGHT + 4*mousemovequick} }, // 向右移动鼠标光标-加速版
+  { MODKEY|ControlMask|ShiftMask,    XK_j,         mousemove,       {.ui = MOUSE_DOWM + 4*mousemovequick} },  // 向下移动鼠标光标-加速版
+  { MODKEY|ControlMask|ShiftMask,    XK_h,         mousemove,       {.ui = MOUSE_LEFT + 4*mousemovequick} },  // 向左移动鼠标光标-加速版
+  { MODKEY|ControlMask|ShiftMask,    XK_Up,        mousemove,       {.ui = MOUSE_UP + 4*mousemovequick} },    // 向上移动鼠标光标-加速版
+  { MODKEY|ControlMask|ShiftMask,    XK_Right,     mousemove,       {.ui = MOUSE_RIGHT + 4*mousemovequick} }, // 向右移动鼠标光标-加速版
+  { MODKEY|ControlMask|ShiftMask,    XK_Down,      mousemove,       {.ui = MOUSE_DOWM + 4*mousemovequick} },  // 向下移动鼠标光标-加速版
+  { MODKEY|ControlMask|ShiftMask,    XK_Left,      mousemove,       {.ui = MOUSE_LEFT + 4*mousemovequick} },  // 向左移动鼠标光标-加速版
 
   /* 窗口管理 */
   { MODKEY|ShiftMask,             XK_f,         fullscreen,      {0} },          // 全屏
@@ -285,8 +286,9 @@ static const Key keys[] = {
   { MODKEY,                       XK_KP_Enter,  zoom,            {0} },
   { Mod4Mask,                     XK_w,         toggleoverview,  {0} },          // 窗口预览
   // { MODKEY,                       XK_Tab,       view,            {0} },          // 切换到上一个tag
-  { MODKEY,                       XK_Tab,       switchprevclient,{.ui = 0} },    // 切换到上一个聚焦窗口
-  { MODKEY|ShiftMask,             XK_Tab,       switchprevclient,{.ui = 1} },    // 切换到上一个聚焦窗口-有限选择其它tag
+  { MODKEY,                       XK_Tab,       switchprevclient,{.ui = SWITCH_DIFF_TAG} },    // 切换到上一个不同tag的聚焦窗口
+  { Mod4Mask,                     XK_Tab,       switchprevclient,{.ui = SWITCH_SAME_TAG} },    // 切换到上一个相同tag的聚焦窗口
+  { MODKEY|ShiftMask,             XK_Tab,       view,            {0} },                        // 切换到前一个tag
   { MODKEY|ShiftMask,             XK_c,         killclient,      {0} },
   { MODKEY,                       XK_t,         setlayout,       {.v = &layouts[0]} }, // 平铺布局
   { MODKEY,                       XK_f,         setlayout,       {.v = &layouts[3]} }, // 浮动布局

@@ -91,6 +91,7 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
 enum { WIN_UP, WIN_DOWN, WIN_LEFT, WIN_RIGHT }; /* movewin */
 enum { V_EXPAND, V_REDUCE, H_EXPAND, H_REDUCE }; /* resizewins */
 enum { MOUSE_UP, MOUSE_RIGHT, MOUSE_DOWM, MOUSE_LEFT }; /* movemouse */
+enum { SWITCH_WIN, SWITCH_SAME_TAG, SWITCH_DIFF_TAG, SWITCH_SMART }; /* switch mode */
 
 typedef union {
 	int i;
@@ -314,6 +315,7 @@ static void view(const Arg *arg);
 static void listwindowpids(Window w, Window pids[], int sz);
 static int inwindowpids(Window w, Window pids[], int sz);
 static int isdialog(Client *c);
+static int isprevclient(int switchmode, Client *src, Client *prev);
 static void switchprevclient(const Arg *arg);
 static void switchclient(Client *c);
 static void addaccstack(Client *c);
@@ -2607,7 +2609,7 @@ toggleview(const Arg *arg)
 	unsigned int newtagset = selmon->tagset[selmon->seltags] ^ (arg->ui & TAGMASK);
 	int i;
 
-	if (newtagset) {
+	if (newtagset & TAGMASK) {
 		selmon->tagset[selmon->seltags] = newtagset;
 
 		if (newtagset == ~0) {
@@ -3184,6 +3186,27 @@ isdialog(Client *c) {
   return c && getatomprop(c, netatom[NetWMWindowType]) == netatom[NetWMWindowTypeDialog];
 }
 
+int
+isprevclient(int switchmode, Client *src, Client *prev) {
+  const Layout *lt;
+  switch (switchmode) {
+  case SWITCH_WIN:
+    return 1;
+  case SWITCH_SAME_TAG:
+    return selmon && selmon == prev->mon && ISVISIBLE(prev);
+  case SWITCH_DIFF_TAG:
+    return (selmon && selmon != prev->mon) || !ISVISIBLE(prev);
+  case SWITCH_SMART:
+    if (!src->isfullscreen && (lt = src->mon->lt[src->mon->sellt]) && lt->arrange == monocle) {
+      return isprevclient(SWITCH_WIN, src, prev);
+    } else {
+      return isprevclient(SWITCH_DIFF_TAG, src, prev);
+    }
+  default:
+    return 0;
+  }
+}
+
 void
 switchprevclient(const Arg *arg) {
 
@@ -3191,7 +3214,7 @@ switchprevclient(const Arg *arg) {
     return;
   }
 
-  unsigned int anothertag = arg->ui;
+  unsigned int switchmode = arg->ui;
 
   // 如果当前窗口是dialog，找到非dialog的第2个窗口，如果没有第2个则取第1个
   // 如果当前窗口非dialog，找到第1个窗口
@@ -3202,25 +3225,25 @@ switchprevclient(const Arg *arg) {
       f1 = f1->next;
     }
     ClientAccNode *f2 = f1 ? f1->next : NULL;
-    while (f2 && (f2->c == selc || (anothertag && ISVISIBLE(f1->c)))) {
+    while (f2 && (f2->c == selc || !isprevclient(switchmode, accstack->c, f2->c))) {
       f2 = f2->next;
     }
     if (f2) {
       switchclient(f2->c);
     } else if (f1) {
       switchclient(f1->c);
-    } else if (anothertag) {
-      switchprevclient(&(Arg){.ui = 0});
+    } else if (switchmode != SWITCH_WIN) {
+      switchprevclient(&(Arg){.ui = SWITCH_WIN});
     }
   } else {
     ClientAccNode *f = accstack;
-    while (f && (f->c == selc || (anothertag && ISVISIBLE(f->c)))) {
+    while (f && (f->c == selc || !isprevclient(switchmode, accstack->c, f->c))) {
       f = f->next;
     }
     if (f) {
       switchclient(f->c);
-    } else if (anothertag) {
-      switchprevclient(&(Arg){.ui = 0});
+    } else if (switchmode != SWITCH_WIN) {
+      switchprevclient(&(Arg){.ui = SWITCH_WIN});
     }
   }
 }
