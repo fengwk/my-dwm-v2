@@ -139,6 +139,7 @@ typedef struct {
 } Layout;
 
 typedef struct Pertag Pertag;
+typedef struct ClientAccNode ClientAccNode;
 struct Monitor {
 	char ltsymbol[16];
 	float mfact;
@@ -164,6 +165,7 @@ struct Monitor {
 	const Layout *lt[2];
 	Pertag *pertag;
   int isoverview; // 是否为预览模式
+  ClientAccNode *accstack;
 };
 
 typedef struct {
@@ -187,7 +189,6 @@ typedef struct {
   const char *val;
 } TagMapEntry;
 
-typedef struct ClientAccNode ClientAccNode;
 struct ClientAccNode {
   Client *c;
   ClientAccNode *next;
@@ -379,7 +380,6 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
-static ClientAccNode *accstack;
 
 static int useargb = 0;
 static Visual *visual;
@@ -648,11 +648,6 @@ cleanup(void)
 		XDestroyWindow(dpy, systray->win);
 		free(systray);
 	}
-  while (accstack) {
-    ClientAccNode *next = accstack->next;
-    free(accstack);
-    accstack = next;
-  }
 	for (i = 0; i < CurLast; i++)
 		drw_cur_free(drw, cursor[i]);
 	for (i = 0; i < LENGTH(colors); i++)
@@ -680,6 +675,12 @@ cleanupmon(Monitor *mon)
 	XDestroyWindow(dpy, mon->barwin);
   if (mon->pertag) {
     free(mon->pertag);
+  }
+  ClientAccNode *accnode = mon->accstack;
+  while (accnode) {
+    ClientAccNode *next = accnode->next;
+    free(accnode);
+    accnode = next;
   }
 	free(mon);
 }
@@ -869,6 +870,7 @@ createmon(void)
 	m->pertag = ecalloc(1, sizeof(Pertag));
 	m->pertag->curtag = m->pertag->prevtag = 1;
   m->isoverview = 0;
+  m->accstack = NULL;
 
 	for (i = 0; i <= LENGTH(tags); i++) {
 		m->pertag->nmasters[i] = m->nmaster;
@@ -3229,7 +3231,7 @@ isprevclient(int switchmode, Client *src, Client *prev) {
 void
 switchprevclient(const Arg *arg) {
 
-  if (!accstack) {
+  if (!selmon || !selmon->accstack) {
     return;
   }
 
@@ -3239,12 +3241,12 @@ switchprevclient(const Arg *arg) {
   // 如果当前窗口非dialog，找到第1个窗口
   Client *selc = selmon && selmon->sel ? selmon->sel : NULL;
   if (isdialog(selc)) {
-    ClientAccNode *f1 = accstack;
+    ClientAccNode *f1 = selmon->accstack;
     while (f1 && (f1->c == selc || isdialog(f1->c))) {
       f1 = f1->next;
     }
     ClientAccNode *f2 = f1 ? f1->next : NULL;
-    while (f2 && (f2->c == selc || !isprevclient(switchmode, accstack->c, f2->c))) {
+    while (f2 && (f2->c == selc || !isprevclient(switchmode, selmon->accstack->c, f2->c))) {
       f2 = f2->next;
     }
     if (f2) {
@@ -3255,8 +3257,8 @@ switchprevclient(const Arg *arg) {
       switchprevclient(&(Arg){.ui = SWITCH_WIN});
     }
   } else {
-    ClientAccNode *f = accstack;
-    while (f && (f->c == selc || !isprevclient(switchmode, accstack->c, f->c))) {
+    ClientAccNode *f = selmon->accstack;
+    while (f && (f->c == selc || !isprevclient(switchmode, selmon->accstack->c, f->c))) {
       f = f->next;
     }
     if (f) {
@@ -3296,19 +3298,19 @@ switchclient(Client *c) {
 
 void
 addaccstack(Client *c) {
-  if (c && !isdialog(c)) {
+  if (selmon && c) {
     removeaccstack(c);
 
     ClientAccNode *h = ecalloc(1, sizeof(ClientAccNode));
     h->c = c;
-    h->next = accstack;
-    accstack = h;
+    h->next = selmon->accstack;
+    selmon->accstack = h;
   }
 }
 
 void
 removeaccstack(Client *c) {
-  ClientAccNode **cur = &accstack;
+  ClientAccNode **cur = &selmon->accstack;
   while (*cur && (*cur)->c != c) {
     cur = &(*cur)->next;
   }
