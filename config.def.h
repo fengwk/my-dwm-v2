@@ -233,7 +233,7 @@ static const Key keys[] = {
   // { MODKEY|ShiftMask,             XK_o,         incrovgaps,      {.i = -1 } }, // 缩小水平外侧间隙
 
   /* 窗口控制 */
-  { Mod4Mask,                     XK_f,         togglefloating,  {0} },              // 窗口浮动开关
+  { Mod4Mask,                     XK_f,         togglefloating,  {0} },                  // 窗口浮动开关
   { Mod4Mask,                     XK_Up,        movewin,         {.ui = WIN_UP} },       // 向上移动窗口
   { Mod4Mask,                     XK_Down,      movewin,         {.ui = WIN_DOWN} },     // 向下移动窗口
   { Mod4Mask,                     XK_Left,      movewin,         {.ui = WIN_LEFT} },     // 向左移动窗口

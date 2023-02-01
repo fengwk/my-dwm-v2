@@ -289,6 +289,7 @@ static void tile(Monitor *m);
 static void grid(Monitor *m);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
+static unsigned int findscratch(Client **c);
 static void togglescratch(const Arg *arg);
 static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
@@ -439,7 +440,7 @@ applyrules(Client *c)
 		XFree(ch.res_class);
 	if (ch.res_name)
 		XFree(ch.res_name);
-	c->tags = c->tags & TAGMASK ? c->tags & TAGMASK : c->mon->tagset[c->mon->seltags];
+	c->tags = c->tags & TAGMASK ? c->tags & TAGMASK : (c->mon->tagset[c->mon->seltags] & TAGMASK);
 }
 
 int
@@ -1402,7 +1403,7 @@ manage(Window w, XWindowAttributes *wa)
 	updatetitle(c);
 	if (XGetTransientForHint(dpy, w, &trans) && (t = wintoclient(trans))) {
 		c->mon = t->mon;
-		c->tags = t->tags;
+		c->tags = (t->tags & TAGMASK);
 	} else {
 		c->mon = selmon;
 		applyrules(c);
@@ -1416,7 +1417,6 @@ manage(Window w, XWindowAttributes *wa)
 	c->y = MAX(c->y, c->mon->wy);
   // c->bw = borderpx;
 
-	selmon->tagset[selmon->seltags] &= ~scratchtag;
 	if (!strcmp(c->name, scratchpadname)) {
 		c->mon->tagset[c->mon->seltags] |= c->tags = scratchtag;
 		c->isfloating = True;
@@ -2388,7 +2388,6 @@ spawn(const Arg *arg)
 {
 	if (arg->v == dmenucmd)
 		dmenumon[0] = '0' + selmon->num;
-	selmon->tagset[selmon->seltags] &= ~scratchtag;
 	if (fork() == 0) {
 		if (dpy)
 			close(ConnectionNumber(dpy));
@@ -2566,16 +2565,23 @@ togglefloating(const Arg *arg)
 	arrange(selmon);
 }
 
+unsigned int
+findscratch(Client **sc) {
+	unsigned int found = 0;
+	for (*sc = selmon->clients; *sc && !(found = (*sc)->tags & scratchtag); *sc = (*sc)->next) {}
+  return found;
+}
+
 void
 togglescratch(const Arg *arg)
 {
 	Client *c;
-	unsigned int found = 0;
-
-	for (c = selmon->clients; c && !(found = c->tags & scratchtag); c = c->next);
-	if (found) {
+	if (findscratch(&c)) {
 		unsigned int newtagset = selmon->tagset[selmon->seltags] ^ scratchtag;
 		if (newtagset) {
+      if (!(newtagset & scratchtag)) { // 如果收起了scratchtag需要清理前一个tagset的相应位
+        selmon->tagset[selmon->seltags ^ 1] &= ~scratchtag;
+      }
 			selmon->tagset[selmon->seltags] = newtagset;
 			focus(NULL);
 			arrange(selmon);
@@ -2584,8 +2590,9 @@ togglescratch(const Arg *arg)
 			focus(c);
 			restack(selmon);
 		}
-	} else
+	} else {
 		spawn(arg);
+  }
 }
 
 void
@@ -2612,10 +2619,11 @@ toggleview(const Arg *arg)
 	if (newtagset & TAGMASK) {
 		selmon->tagset[selmon->seltags] = newtagset;
 
-		if (newtagset == ~0) {
-			selmon->pertag->prevtag = selmon->pertag->curtag;
-			selmon->pertag->curtag = 0;
-		}
+    // TODO 这段逻辑看起来不会进入，使用一段时间后如果没问题可以删除
+		// if (newtagset == ~0) {
+		// 	selmon->pertag->prevtag = selmon->pertag->curtag;
+		// 	selmon->pertag->curtag = 0;
+		// }
 
 		/* test if the user did not select the same tag */
 		if (!(newtagset & 1 << (selmon->pertag->curtag - 1))) {
@@ -2670,6 +2678,13 @@ unmanage(Client *c, int destroyed)
 {
 	Monitor *m = c->mon;
 	XWindowChanges wc;
+
+	Client *sc;
+	if (findscratch(&sc) && sc == c) {
+    // 去除scratchtag标志位
+    selmon->tagset[selmon->seltags] &= ~scratchtag;
+    selmon->tagset[selmon->seltags ^ 1] &= ~scratchtag;
+  }
 
 	detach(c);
 	detachstack(c);
@@ -3112,13 +3127,17 @@ view(const Arg *arg)
 	int i;
 	unsigned int tmptag;
 
-	if ((arg->ui & TAGMASK) == selmon->tagset[selmon->seltags]) {
-    arrange(selmon); // overview是需触发渲染
+	if ((arg->ui & TAGMASK) == (selmon->tagset[selmon->seltags] & TAGMASK)) {
+    // TODO 待改进
+    arrange(selmon); // overview需要触发渲染
 		return;
   }
+  // int prevtag = selmon->tagset[selmon->seltags];
 	selmon->seltags ^= 1; /* toggle sel tagset */
 	if (arg->ui & TAGMASK) {
-		selmon->tagset[selmon->seltags] = arg->ui & TAGMASK;
+    // 保留TAGMASK之外的位以支持scratch
+    // selmon->tagset[selmon->seltags] = (prevtag & scratchtag) | (arg->ui & TAGMASK);
+    selmon->tagset[selmon->seltags] = arg->ui & TAGMASK; // 这里不抹除前一个tagset，这样可以使得switch回去后保留scratchtag
 		selmon->pertag->prevtag = selmon->pertag->curtag;
 
 		if (arg->ui == ~0)
