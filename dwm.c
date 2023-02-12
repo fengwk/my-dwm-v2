@@ -58,6 +58,7 @@
 #define HEIGHT(X)               ((X)->h + 2 * (X)->bw)
 #define TAGMASK                 ((1 << LENGTH(tags)) - 1)
 #define TEXTW(X)                (drw_fontset_getwidth(drw, (X)) + lrpad)
+#define ISTAG(tag) ((tag & TAGMASK) == (selmon->tagset[selmon->seltags] & TAGMASK))
 
 #define SYSTEM_TRAY_REQUEST_DOCK    0
 
@@ -2203,11 +2204,18 @@ fullscreen(const Arg *arg)
 void
 setlayout(const Arg *arg)
 {
+
+  Arg *a = &((Arg) {0});
+  // 如果当前布局与默认布局不一致则切换布局
+  if (arg && arg->v != selmon->lt[selmon->sellt]) {
+    a->v = arg->v;
+  }
+
 	unsigned int i;
-	if (!arg || !arg->v || arg->v != selmon->lt[selmon->sellt])
+	if (!a || !a->v || a->v != selmon->lt[selmon->sellt])
 		selmon->sellt ^= 1;
-	if (arg && arg->v)
-		selmon->lt[selmon->sellt] = (Layout *)arg->v;
+	if (a && a->v)
+		selmon->lt[selmon->sellt] = (Layout *)a->v;
 	strncpy(selmon->ltsymbol, selmon->lt[selmon->sellt]->symbol, sizeof selmon->ltsymbol);
 
 	for(i=0; i<LENGTH(tags); ++i)
@@ -2658,6 +2666,9 @@ toggleoverview(const Arg *arg)
 
     uint target = selmon->sel ? selmon->sel->tags : selmon->seltags;
     selmon->isoverview ^= 1;
+    if (ISTAG(target)) {
+      arrange(selmon);
+    }
     view(&(Arg){ .ui = target });
     focus(selmon->sel);
 }
@@ -3129,9 +3140,7 @@ view(const Arg *arg)
 	int i;
 	unsigned int tmptag;
 
-	if ((arg->ui & TAGMASK) == (selmon->tagset[selmon->seltags] & TAGMASK)) {
-    // TODO 待改进
-    arrange(selmon); // overview需要触发渲染
+	if (ISTAG(arg->ui)) {
 		return;
   }
   // int prevtag = selmon->tagset[selmon->seltags];
