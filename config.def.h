@@ -60,6 +60,7 @@ static const TagMapEntry tagnamemap[] = {
   { "st-256color", "" },
   { "Alacritty", "" },
   { "Google-chrome", "" },
+  { "Google-chrome-unstable", "" },
   { "jetbrains-idea", "" },
   { "jetbrains-idea-ce", "" },
   { "code-oss", "" },
@@ -113,16 +114,18 @@ static const Rule rules[] = {
    *	WM_CLASS(STRING) = instance, class
    *	WM_NAME(STRING) = title
    */
-  /* class            instance    title    tags mask    isfloating    monitor    hideborder */
-  { "Peek",           NULL,       NULL,    0,           1,            -1,        0 },
-  { "popo",           NULL,       NULL,    0,           1,            -1,        1 },
-  { "wechat.exe",     NULL,       NULL,    0,           1,            -1,        0 },
-  { "QQ",             NULL,       NULL,    0,           1,            -1,        0 },
-  { "feh",            NULL,       NULL,    0,           1,            -1,        0 },
-  { "jetbrains-idea", NULL,       NULL,    0,           0,            -1,        0 },
-  { "jetbrains-idea-ce", NULL,    NULL,    0,           0,            -1,        0 },
-  { "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1, 0 },
-  { "netease-cloud-music", NULL,  NULL,    0,           1,            -1,        0 },
+  /* class            instance    title    tags mask    isfloating    monitor    hideborder    fixrender */
+  { "Peek",           NULL,       NULL,    0,           1,            -1,        0,            0},
+  { "popo",           NULL,       NULL,    0,           1,            -1,        1,            0},
+  { "wechat.exe",     NULL,       NULL,    0,           1,            -1,        0,            0},
+  { "QQ",             NULL,       NULL,    0,           1,            -1,        0,            0},
+  { "feh",            NULL,       NULL,    0,           1,            -1,        0,            0},
+  { "XMind",          NULL,       NULL,    0,           0,            -1,        0,            1},
+  { "xiaoyi_assistant", NULL,     NULL,    0,           0,            -1,        0,            1},
+  { "jetbrains-idea", NULL,       NULL,    0,           0,            -1,        0,            0},
+  { "jetbrains-idea-ce", NULL,    NULL,    0,           0,            -1,        0,            0},
+  { "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1, 0,        0},
+  { "netease-cloud-music", NULL,  NULL,    0,           1,            -1,        0,            0},
 };
 
 // overview

@@ -124,6 +124,7 @@ struct Client {
 	Client *snext;
 	Monitor *mon;
 	Window win;
+  int fixrender;
 };
 
 typedef struct {
@@ -177,6 +178,7 @@ typedef struct {
 	int isfloating;
 	int monitor;
   int hideborder;
+  int fixrender;
 } Rule;
 
 typedef struct Systray Systray;
@@ -419,6 +421,7 @@ applyrules(Client *c)
 	/* rule matching */
 	c->isfloating = 0;
 	c->tags = 0;
+  c->fixrender = 0;
 	XGetClassHint(dpy, c->win, &ch);
 	class    = ch.res_class ? ch.res_class : broken;
 	instance = ch.res_name  ? ch.res_name  : broken;
@@ -432,6 +435,7 @@ applyrules(Client *c)
 			c->isfloating = r->isfloating;
 			c->tags |= r->tags;
       c->bw = r->hideborder ? 0 : borderpx;
+      c->fixrender = r->fixrender ? 1 : 0;
 			for (m = mons; m && m->num != r->monitor; m = m->next);
 			if (m)
 				c->mon = m;
@@ -1682,8 +1686,16 @@ removesystrayicon(Client *i)
 void
 resize(Client *c, int x, int y, int w, int h, int interact)
 {
-	if (applysizehints(c, &x, &y, &w, &h, interact))
-		resizeclient(c, x, y, w, h);
+	if (applysizehints(c, &x, &y, &w, &h, interact)) {
+    if (c->fixrender) {
+      // 对于一些特殊的应用，例如xmind，存在resize后无法刷新的情况，下面的多次操作可以使这些应用的视图刷新生效，在找到真正的解决办法之前这会是一种无可奈何的方案
+      resizeclient(c, x+1, y+1, w, h);
+      usleep(25000);
+      resizeclient(c, x, y, w, h);
+    } else {
+      resizeclient(c, x, y, w, h);
+    }
+  }
 }
 
 void
@@ -3249,23 +3261,23 @@ switchprevclient(const Arg *arg) {
   // 如果当前窗口是dialog，找到非dialog的第2个窗口，如果没有第2个则取第1个
   // 如果当前窗口非dialog，找到第1个窗口
   Client *selc = selmon && selmon->sel ? selmon->sel : NULL;
-  if (isdialog(selc)) {
-    ClientAccNode *f1 = selmon->accstack;
-    while (f1 && (f1->c == selc || isdialog(f1->c))) {
-      f1 = f1->next;
-    }
-    ClientAccNode *f2 = f1 ? f1->next : NULL;
-    while (f2 && (f2->c == selc || !isprevclient(switchmode, selmon->accstack->c, f2->c))) {
-      f2 = f2->next;
-    }
-    if (f2) {
-      switchclient(f2->c);
-    } else if (f1) {
-      switchclient(f1->c);
-    } else if (switchmode != SWITCH_WIN) {
-      switchprevclient(&(Arg){.ui = SWITCH_WIN});
-    }
-  } else {
+  // if (isdialog(selc)) {
+  //   ClientAccNode *f1 = selmon->accstack;
+  //   while (f1 && (f1->c == selc || isdialog(f1->c))) {
+  //     f1 = f1->next;
+  //   }
+  //   ClientAccNode *f2 = f1 ? f1->next : NULL;
+  //   while (f2 && (f2->c == selc || !isprevclient(switchmode, selmon->accstack->c, f2->c))) {
+  //     f2 = f2->next;
+  //   }
+  //   if (f2) {
+  //     switchclient(f2->c);
+  //   } else if (f1) {
+  //     switchclient(f1->c);
+  //   } else if (switchmode != SWITCH_WIN) {
+  //     switchprevclient(&(Arg){.ui = SWITCH_WIN});
+  //   }
+  // } else {
     ClientAccNode *f = selmon->accstack;
     while (f && (f->c == selc || !isprevclient(switchmode, selmon->accstack->c, f->c))) {
       f = f->next;
@@ -3275,7 +3287,7 @@ switchprevclient(const Arg *arg) {
     } else if (switchmode != SWITCH_WIN) {
       switchprevclient(&(Arg){.ui = SWITCH_WIN});
     }
-  }
+  // }
 }
 
 // 切换到指定client
