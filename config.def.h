@@ -291,6 +291,7 @@ static const Key keys[] = {
   // { MODKEY,                       XK_Tab,       view,            {0} },          // 切换到上一个tag
   { MODKEY,                       XK_Tab,       switchprevclient,{.ui = SWITCH_DIFF_TAG} },    // 切换到上一个不同tag的聚焦窗口
   { Mod4Mask,                     XK_Tab,       switchprevclient,{.ui = SWITCH_SAME_TAG} },    // 切换到上一个相同tag的聚焦窗口
+  { Mod4Mask|ShiftMask,           XK_Tab,       switchprevclient,{.ui = SWITCH_WIN} },         // 切换到上一个聚焦窗口
   { MODKEY|ShiftMask,             XK_Tab,       view,            {0} },                        // 切换到前一个tag
   { MODKEY|ShiftMask,             XK_c,         killclient,      {0} },
   { MODKEY,                       XK_t,         setlayout,       {.v = &layouts[0]} }, // 平铺布局

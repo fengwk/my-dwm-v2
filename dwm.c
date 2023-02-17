@@ -3331,19 +3331,21 @@ addaccstack(Client *c) {
 
 void
 removeaccstack(Client *c) {
-  ClientAccNode **cur = &selmon->accstack;
-  while (*cur && (*cur)->c != c) {
-    cur = &(*cur)->next;
-  }
-
-  if (*cur) {
-    ClientAccNode *curfree = *cur;
-    if ((*cur)->next) {
-      *cur = (*cur)->next;
-    } else {
-      *cur = NULL;
+	for (Monitor *m = mons; m; m = m->next) {
+    ClientAccNode **cur = &m->accstack;
+    while (*cur && (*cur)->c != c) {
+      cur = &(*cur)->next;
     }
-    free(curfree);
+
+    if (*cur) {
+      ClientAccNode *curfree = *cur;
+      if ((*cur)->next) {
+        *cur = (*cur)->next;
+      } else {
+        *cur = NULL;
+      }
+      free(curfree);
+    }
   }
 }
 
