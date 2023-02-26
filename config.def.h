@@ -17,8 +17,8 @@ static const int movewinthresholdv  = 12; /* 垂直：这个阈值越大movewin�
 static const int movewinthresholdh  = 16; /* 水平：这个阈值越大movewin操作改变的范围越小 */
 static const int resizewinthresholdv= 20; /* 垂直：这个阈值越大resizewin操作改变的范围越小 */
 static const int resizewinthresholdh= 40; /* 水平：这个阈值越大resizewin操作改变的范围越小 */
-static const char *fonts[]          = { "SauceCodePro Nerd Font Mono:pixelsize=32" };
-static const char dmenufont[]       = "SauceCodePro Nerd Font Mono:pixelsize=32";
+static const char *fonts[]          = { "SauceCodePro Nerd Font:pixelsize=32" };
+static const char dmenufont[]       = "SauceCodePro Nerd Font:pixelsize=32";
 // 淡雅灰配色
 static const char col_gray1[]       = "#222222";
 static const char col_gray2[]       = "#444444";
@@ -61,6 +61,8 @@ static const TagMapEntry tagnamemap[] = {
   { "Alacritty", "" },
   { "Google-chrome", "" },
   { "Google-chrome-unstable", "" },
+  { "Microsoft-edge-dev", "󰇩" },
+  { "Microsoft-edge", "󰇩" },
   { "jetbrains-idea", "" },
   { "jetbrains-idea-ce", "" },
   { "code-oss", "" },
@@ -121,7 +123,7 @@ static const Rule rules[] = {
   { "QQ",             NULL,       NULL,    0,           1,            -1,        0,            0},
   { "feh",            NULL,       NULL,    0,           1,            -1,        0,            0},
   { "XMind",          NULL,       NULL,    0,           0,            -1,        0,            1},
-  { "xiaoyi_assistant", NULL,     NULL,    0,           0,            -1,        0,            1},
+  { "xiaoyi_assistant", NULL,     NULL,    1<<9,        0,            -1,        0,            1},
   { "jetbrains-idea", NULL,       NULL,    0,           0,            -1,        0,            0},
   { "jetbrains-idea-ce", NULL,    NULL,    0,           0,            -1,        0,            0},
   { "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1, 0,        0},
