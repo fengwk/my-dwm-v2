@@ -59,8 +59,8 @@ static const char etagf[] = "%s";  /* format of an empty tag */
 static const TagMapEntry tagnamemap[] = {
   { "st-256color", "" },
   { "Alacritty", "" },
-  { "Google-chrome", "" },
-  { "Google-chrome-unstable", "" },
+  { "Google-chrome", "󰊯" },
+  { "Google-chrome-unstable", "󰊯" },
   { "Microsoft-edge-dev", "󰇩" },
   { "Microsoft-edge", "󰇩" },
   { "jetbrains-idea", "" },
@@ -123,7 +123,7 @@ static const Rule rules[] = {
   { "QQ",             NULL,       NULL,    0,           1,            -1,        0,            0},
   { "feh",            NULL,       NULL,    0,           1,            -1,        0,            0},
   { "XMind",          NULL,       NULL,    0,           0,            -1,        0,            1},
-  { "xiaoyi_assistant", NULL,     NULL,    1<<9,        0,            -1,        0,            1},
+  { "xiaoyi_assistant", NULL,     NULL,    1<<8,        0,            -1,        0,            1},
   { "jetbrains-idea", NULL,       NULL,    0,           0,            -1,        0,            0},
   { "jetbrains-idea-ce", NULL,    NULL,    0,           0,            -1,        0,            0},
   { "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1, 0,        0},
@@ -307,10 +307,12 @@ static const Key keys[] = {
   { MODKEY,                       XK_period,    focusmon,        {.i = +1 } }, // 切到下一个监视器
   { MODKEY|ShiftMask,             XK_comma,     tagmon,          {.i = -1 } }, // 将当前窗口发送到上一个监视器
   { MODKEY|ShiftMask,             XK_period,    tagmon,          {.i = +1 } }, // 将当前窗口发送到下一个监视器
-  { MODKEY|ShiftMask,             XK_Left,      viewtoleft,      {0} }, // 切换到左侧tag
-  { MODKEY|ShiftMask,             XK_Right,     viewtoright,     {0} }, // 切换到右侧tag
-  { MODKEY|ShiftMask,             XK_h,         viewtoleft,      {0} }, // 切换到左侧tag
-  { MODKEY|ShiftMask,             XK_l,         viewtoright,     {0} }, // 切换到右侧tag
+  // { MODKEY|ShiftMask,             XK_Left,      viewtoleft,      {0} }, // 切换到左侧tag
+  // { MODKEY|ShiftMask,             XK_Right,     viewtoright,     {0} }, // 切换到右侧tag
+  // { MODKEY|ShiftMask,             XK_h,         viewtoleft,      {0} }, // 切换到左侧tag
+  // { MODKEY|ShiftMask,             XK_l,         viewtoright,     {0} }, // 切换到右侧tag
+  { MODKEY|ShiftMask,             XK_j,         viewtoleft,      {0} }, // 切换到左侧tag
+  { MODKEY|ShiftMask,             XK_k,         viewtoright,     {0} }, // 切换到右侧tag
   // { MODKEY,                       XK_bracketleft,  viewtoleft,   {0} },
   // { MODKEY,                       XK_bracketright, viewtoright,  {0} },
   TAGKEYS(                        XK_1,                          0)
