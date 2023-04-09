@@ -2599,10 +2599,12 @@ togglescratch(const Arg *arg)
 {
   Client *c;
   if (findscratch(&c)) {
-    unsigned int newtagset = selmon->tagset[selmon->seltags] ^ scratchtag;
+    unsigned int newtagset = selmon->tagset[selmon->seltags] ^ scratchtag; // 改变scratchtag位的状态
     if (newtagset) {
-      if (!(newtagset & scratchtag)) { // 如果收起了scratchtag需要清理前一个tagset的相应位
+      if (!(newtagset & scratchtag)) {
+        // 如果收起了scratchtag需要清理前一个tagset的相应位，并且从accstack中移出
         selmon->tagset[selmon->seltags ^ 1] &= ~scratchtag;
+        removeaccstack(c);
       }
       selmon->tagset[selmon->seltags] = newtagset;
       focus(NULL);
