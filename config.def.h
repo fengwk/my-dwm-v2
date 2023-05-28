@@ -163,9 +163,12 @@ static const Layout layouts[] = {
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
 static const char *rofi_win[] = { "rofi", "-show", "window", NULL };
-static const char *rofi_run[] = { "rofi", "-show", "run", NULL };
-static const char *rofi_drun[] = { "rofi", "-show", "drun", NULL };
+// static const char *rofi_run[] = { "rofi", "-show", "run", NULL };
+// static const char *rofi_drun[] = { "rofi", "-show", "drun", NULL };
+static const char *rofi_run[] = { "rofi", "-show", "combi", "-combi-modes", "drun,run", "-modes", "combi", NULL };
 static const char *rofi_ssh[] = { "rofi", "-show", "ssh", NULL };
+static const char *rofi_browser[] = { "rofi-broswer", NULL };
+static const char *rofi_clipster[] = { "rofi-clipster", NULL };
 // static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "st", NULL };
 // static const char *termcmd[]  = { "st", NULL };
 // static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "alacritty", NULL };
@@ -197,8 +200,10 @@ static const Key keys[] = {
   /* rofi */
   { MODKEY,                       XK_w,         spawn,           {.v = rofi_win } },
   { MODKEY,                       XK_p,         spawn,           {.v = rofi_run } },
-  { MODKEY|ShiftMask,             XK_p,         spawn,           {.v = rofi_drun } },
-  { MODKEY,                       XK_s,         spawn,           {.v = rofi_ssh } },
+  // { MODKEY|ShiftMask,             XK_p,         spawn,           {.v = rofi_drun } },
+  { MODKEY,                       XK_s,         spawn,           {.v = rofi_browser } },
+  { MODKEY|ShiftMask,             XK_s,         spawn,           {.v = rofi_ssh } },
+  { MODKEY,                       XK_v,         spawn,           {.v = rofi_clipster } },
 
   /* terminal */
   { MODKEY|ShiftMask,             XK_Return,    spawn,           {.v = termcmd } },
