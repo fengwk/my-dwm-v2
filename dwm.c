@@ -52,6 +52,7 @@
 #define INTERSECT(x,y,w,h,m)    (MAX(0, MIN((x)+(w),(m)->wx+(m)->ww) - MAX((x),(m)->wx)) \
                                * MAX(0, MIN((y)+(h),(m)->wy+(m)->wh) - MAX((y),(m)->wy)))
 #define ISVISIBLE(C)            ((C->mon->isoverview || C->tags & C->mon->tagset[C->mon->seltags]))
+#define HIDDEN(C)               ((getstate(C->win) == IconicState))
 #define LENGTH(X)               (sizeof X / sizeof X[0])
 #define MOUSEMASK               (BUTTONMASK|PointerMotionMask)
 #define WIDTH(X)                ((X)->w + 2 * (X)->bw)
@@ -80,7 +81,7 @@
 
 /* enums */
 enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
-enum { SchemeNorm, SchemeSel }; /* color schemes */
+enum { SchemeNorm, SchemeSel, SchemeHid }; /* color schemes */
 enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
        NetSystemTray, NetSystemTrayOP, NetSystemTrayOrientation, NetSystemTrayOrientationHorz,
        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
@@ -125,6 +126,7 @@ struct Client {
   Monitor *mon;
   Window win;
   int fixrender;
+  int hid;
 };
 
 typedef struct {
@@ -148,6 +150,8 @@ struct Monitor {
   int nmaster;
   int num;
   int by;               /* bar geometry */
+  int btw;              /* width of tasks portion of bar */
+	int bt;               /* number of tasks */
   int mx, my, mw, mh;   /* screen size */
   int wx, wy, ww, wh;   /* window area  */
   int gappih;           /* horizontal gap between windows */
@@ -227,7 +231,12 @@ static void focus(Client *c);
 static void focusin(XEvent *e);
 static void focusmon(const Arg *arg);
 static void focusmonbyclient(Client *c);
-static void focusstack(const Arg *arg);
+static void focusstackvis(const Arg *arg);
+static void focusstackhid(const Arg *arg);
+static void focusstackhidc(const Arg *arg);
+static void focusstackcursor(const Arg *arg);
+static void focusstack(int inc, int hid, int showhid);
+static void focusclient(const Arg *arg);
 static Atom getatomprop(Client *c, Atom prop);
 static int getrootptr(int *x, int *y);
 static long getstate(Window w);
@@ -235,6 +244,8 @@ static unsigned int getsystraywidth();
 static int gettextprop(Window w, Atom atom, char *text, unsigned int size);
 static void grabbuttons(Client *c, int focused);
 static void grabkeys(void);
+static void hide(const Arg *arg);
+static void hidewin(Client *c);
 static void incnmaster(const Arg *arg);
 static void keypress(XEvent *e);
 static void killclient(const Arg *arg);
@@ -282,6 +293,9 @@ static void setlayout(const Arg *arg);
 static void setmfact(const Arg *arg);
 static void setup(void);
 static void seturgent(Client *c, int urg);
+static void show(const Arg *arg);
+static void showall(const Arg *arg);
+static void showwin(Client *c, int clearflag);
 static void showhide(Client *c);
 static void sigchld(int unused);
 static int solitary(Client *c);
@@ -299,6 +313,7 @@ static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
 static void toggleoverview(const Arg *arg);
 static void unfocus(Client *c, int setfocus);
+static void togglewin(const Arg *arg);
 static void unmanage(Client *c, int destroyed);
 static void unmapnotify(XEvent *e);
 static void updatebarpos(Monitor *m);
@@ -322,7 +337,7 @@ static int inwindowpids(Window w, Window pids[], int sz);
 static int isdialog(Client *c);
 static int isprevclient(int switchmode, Client *src, Client *prev);
 static void switchprevclient(const Arg *arg);
-static void switchclient(Client *c);
+static void switchclient(Client *c, int showhid);
 static void addaccstack(Client *c);
 static void removeaccstack(Client *c);
 static Client *wintoclient(Window w);
@@ -605,10 +620,24 @@ buttonpress(XEvent *e)
       arg.ui = 1 << i;
     } else if (ev->x < x + TEXTW(selmon->ltsymbol))
       click = ClkLtSymbol;
-    else if (ev->x > selmon->ww - TEXTW(stext) - getsystraywidth())
+    else if (ev->x > selmon->ww - TEXTW(stext) - getsystraywidth() + lrpad - 2) /* 2px right padding */
       click = ClkStatusText;
-    else
-      click = ClkWinTitle;
+    else {
+      x += TEXTW(selmon->ltsymbol);
+			c = m->clients;
+
+			if (c) {
+				do {
+					if (!ISVISIBLE(c))
+						continue;
+					else
+						x +=(1.0 / (double)m->bt) * m->btw;
+				} while (ev->x > x && (c = c->next));
+
+				click = ClkWinTitle;
+				arg.v = c;
+			}
+    }
   } else if ((c = wintoclient(ev->window))) {
     focus(c);
     restack(selmon);
@@ -618,7 +647,7 @@ buttonpress(XEvent *e)
   for (i = 0; i < LENGTH(buttons); i++)
     if (click == buttons[i].click && buttons[i].func && buttons[i].button == ev->button
     && CLEANMASK(buttons[i].mask) == CLEANMASK(ev->state))
-      buttons[i].func(click == ClkTagBar && buttons[i].arg.i == 0 ? &arg : &buttons[i].arg);
+      buttons[i].func((click == ClkTagBar || click == ClkWinTitle) && buttons[i].arg.i == 0 ? &arg : &buttons[i].arg);
 }
 
 void
@@ -750,7 +779,7 @@ clientmessage(XEvent *e)
     if (c != selmon->sel && !c->isurgent)
       seturgent(c, 1);
     // 收到通知后切换到指定client
-    switchclient(c);
+    switchclient(c, 1);
   }
 }
 
@@ -964,7 +993,22 @@ gettagdisplayname(Client* c) {
 void
 drawbar(Monitor *m)
 {
-  int x, w, tw = 0, stw = 0, mw, ew = 0;
+  /*
+   - `x`：绘制状态栏时的横坐标。
+   - `tw`：状态栏中文本的宽度。
+   - `stw`：系统托盘的宽度。
+   - `mw`：每个客户端名称的最大宽度。
+   - `ew`：超出最大宽度的宽度总和。
+   - `boxs`：客户端名称旁边小方块的大小。
+   - `boxw`：客户端名称旁边小方块的宽度。
+   - `i`：循环计数器。
+   - `occ`：当前可见的客户端所在标签的二进制表示。
+   - `urg`：当前有紧急状态的客户端所在标签的二进制表示。
+   - `n`：当前可见的客户端数量。
+   - `c`：指向客户端的指针。
+   - `tagdisp`：标签名称和 master 客户端名称的组
+   */
+  int x, w, tw = 0, stw = 0, mw, ew = 0, scm;
   int boxs = drw->fonts->h / 9;
   int boxw = drw->fonts->h / 6 + 2;
   unsigned int i, occ = 0, urg = 0, n = 0;
@@ -975,6 +1019,7 @@ drawbar(Monitor *m)
   if(showsystray && m == systraytomon(m))
     stw = getsystraywidth();
 
+  // 绘制状态栏
   /* draw status first so it can be overdrawn by tags later */
   if (m == selmon) { /* status is only drawn on selected monitor */
     drw_setscheme(drw, scheme[SchemeNorm]);
@@ -1001,6 +1046,7 @@ drawbar(Monitor *m)
       }
   }
   x = 0;
+  // 绘制tags
   if (m->isoverview) {
       w = TEXTW(overviewtag);
       drw_setscheme(drw, scheme[SchemeSel]);
@@ -1022,45 +1068,53 @@ drawbar(Monitor *m)
       x += w;
     }
   }
+
+  // 绘制布局名称
   w = TEXTW(m->ltsymbol);
   drw_setscheme(drw, scheme[SchemeNorm]);
   x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
 
+  // 绘制clients
   if ((w = m->ww - tw - stw - x) > bh) {
     if (n > 0) {
-      tw = TEXTW(m->sel->name) + lrpad;
-      mw = (tw >= w || n == 1) ? 0 : (w - tw) / (n - 1);
-
-      i = 0;
-      for (c = m->clients; c; c = c->next) {
-        if (!ISVISIBLE(c) || c == m->sel)
-          continue;
-        tw = TEXTW(c->name);
-        if(tw < mw)
-          ew += (mw - tw);
-        else
-          i++;
-      }
-      if (i > 0)
-        mw += ew / i;
-
+      int remainder = w % n;
+      int tabw = (1.0 / (double)n) * w + 1;
       for (c = m->clients; c; c = c->next) {
         if (!ISVISIBLE(c))
           continue;
-        tw = MIN(m->sel == c ? w : mw, TEXTW(c->name));
+        if (m->sel == c) {
+          scm = SchemeSel;
+        } else if (HIDDEN(c)) {
+          scm = SchemeHid;
+        } else {
+          scm = SchemeNorm;
+        }
+        drw_setscheme(drw, scheme[scm]);
 
-        drw_setscheme(drw, scheme[m == selmon && m->sel == c ? SchemeSel : SchemeNorm]);
-        if (tw > lrpad / 2)
-          drw_text(drw, x, 0, tw, bh, lrpad / 2, c->name, 0);
-        if (c->isfloating)
-          drw_rect(drw, x + boxs, boxs, boxw, boxw, c->isfixed, 0);
-        x += tw;
-        w -= tw;
+        if (remainder >= 0) {
+          if (remainder == 0) {
+            tabw--;
+          }
+          remainder--;
+        }
+
+        if (c->hid) {
+          char *hidename = ecalloc(1, strlen(c->name) + strlen(HIDETAG) + 1);
+          sprintf(hidename, "%s%s", HIDETAG, c->name);
+          drw_text(drw, x, 0, tabw, bh, lrpad / 2, hidename, 0);
+          free(hidename);
+        } else {
+          drw_text(drw, x, 0, tabw, bh, lrpad / 2, c->name, 0);
+        }
+        x += tabw;
       }
-     }
-    drw_setscheme(drw, scheme[SchemeNorm]);
-    drw_rect(drw, x, 0, w, bh, 1, 1);
+    } else {
+      drw_setscheme(drw, scheme[SchemeNorm]);
+      drw_rect(drw, x, 0, w, bh, 1, 1);
+    }
   }
+  m->bt = n; // 可见客户端数量
+	m->btw = w;  // clients可用的宽度
   drw_map(drw, m->barwin, 0, 0, m->ww - stw, bh);
 }
 
@@ -1109,9 +1163,13 @@ void
 focus(Client *c)
 {
   if (!c || !ISVISIBLE(c))
-    for (c = selmon->stack; c && !ISVISIBLE(c); c = c->snext);
-  if (selmon->sel && selmon->sel != c)
-    unfocus(selmon->sel, 0);
+    for (c = selmon->stack; c && (!ISVISIBLE(c) || HIDDEN(c)); c = c->snext);
+  if (selmon->sel && selmon->sel != c) {
+    Client *sel = selmon->sel;
+    unfocus(sel, 0);
+    if (c)
+      arrange(c->mon);
+  }
   if (c) {
     if (c->mon != selmon)
       selmon = c->mon;
@@ -1179,28 +1237,61 @@ focusmonbyclient(Client *c) {
 }
 
 void
-focusstack(const Arg *arg)
+focusstackvis(const Arg *arg) {
+	focusstack(arg->i, 0, 0);
+}
+
+void
+focusstackhid(const Arg *arg) {
+	focusstack(arg->i, 1, 1);
+}
+
+void
+focusstackhidc(const Arg *arg) {
+	focusstack(arg->i, 1, 0);
+}
+
+void
+focusstack(int inc, int hid, int showhid)
 {
   Client *c = NULL, *i;
 
-  if (!selmon->sel || (selmon->sel->isfullscreen && lockfullscreen))
+  // if no client selected AND exclude hidden client; if client selected but fullscreened
+  if ((!selmon->sel && !hid) || (selmon->sel && selmon->sel->isfullscreen && lockfullscreen))
     return;
-  if (arg->i > 0) {
-    for (c = selmon->sel->next; c && !ISVISIBLE(c); c = c->next);
+  if (!selmon->clients)
+    return;
+  if (inc > 0) {
+    if (selmon->sel)
+      for (c = selmon->sel->next;
+          c && (!ISVISIBLE(c) || (!hid && HIDDEN(c)));
+          c = c->next);
     if (!c)
-      for (c = selmon->clients; c && !ISVISIBLE(c); c = c->next);
+      for (c = selmon->clients;
+          c && (!ISVISIBLE(c) || (!hid && HIDDEN(c)));
+          c = c->next);
   } else {
-    for (i = selmon->clients; i != selmon->sel; i = i->next)
-      if (ISVISIBLE(i))
-        c = i;
+    if (selmon->sel) {
+      for (i = selmon->clients; i != selmon->sel; i = i->next)
+        if (ISVISIBLE(i) && !(!hid && HIDDEN(i)))
+          c = i;
+    } else
+      c = selmon->clients;
     if (!c)
       for (; i; i = i->next)
-        if (ISVISIBLE(i))
+        if (ISVISIBLE(i) && !(!hid && HIDDEN(i)))
           c = i;
   }
   if (c) {
-    focus(c);
-    restack(selmon);
+    switchclient(c, showhid);
+  }
+}
+
+void
+focusclient(const Arg *arg) {
+  if (arg && arg->v) {
+    Client *c = (Client *) arg->v;
+    switchclient(c, 1);
   }
 }
 
@@ -1325,6 +1416,37 @@ grabkeys(void)
           XGrabKey(dpy, code, keys[i].mod | modifiers[j], root,
             True, GrabModeAsync, GrabModeAsync);
   }
+}
+
+void
+hide(const Arg *arg)
+{
+	hidewin(selmon->sel);
+	focus(NULL);
+	arrange(selmon);
+}
+
+void
+hidewin(Client *c) {
+	if (!c || HIDDEN(c))
+		return;
+
+	Window w = c->win;
+	static XWindowAttributes ra, ca;
+
+	// more or less taken directly from blackbox's hide() function
+	XGrabServer(dpy);
+	XGetWindowAttributes(dpy, root, &ra);
+	XGetWindowAttributes(dpy, w, &ca);
+	// prevent UnmapNotify events
+	XSelectInput(dpy, root, ra.your_event_mask & ~SubstructureNotifyMask);
+	XSelectInput(dpy, w, ca.your_event_mask & ~StructureNotifyMask);
+	XUnmapWindow(dpy, w);
+	setclientstate(c, IconicState);
+	XSelectInput(dpy, root, ra.your_event_mask);
+	XSelectInput(dpy, w, ca.your_event_mask);
+	XUngrabServer(dpy);
+  c->hid = 1;
 }
 
 void
@@ -1453,12 +1575,17 @@ manage(Window w, XWindowAttributes *wa)
   XChangeProperty(dpy, root, netatom[NetClientList], XA_WINDOW, 32, PropModeAppend,
     (unsigned char *) &(c->win), 1);
   XMoveResizeWindow(dpy, c->win, c->x + 2 * sw, c->y, c->w, c->h); /* some windows require this */
-  setclientstate(c, NormalState);
-  if (c->mon == selmon)
+  if (!HIDDEN(c)) {
+		setclientstate(c, NormalState);
+  }
+  if (c->mon == selmon) {
     unfocus(selmon->sel, 0);
+  }
   c->mon->sel = c;
   arrange(c->mon);
-  XMapWindow(dpy, c->win);
+	if (!HIDDEN(c)) {
+		XMapWindow(dpy, c->win);
+  }
   focus(NULL);
 }
 
@@ -1589,7 +1716,7 @@ Client *
 nexttiled(Client *c)
 {
   // 从客户端链表中找到下一个不是浮动且可见的client实例
-  for (; c && (c->isfloating || !ISVISIBLE(c)); c = c->next);
+  for (; c && (c->isfloating || !ISVISIBLE(c) || HIDDEN(c)); c = c->next);
   return c;
 }
 
@@ -1652,6 +1779,16 @@ propertynotify(XEvent *e)
 void
 quit(const Arg *arg)
 {
+  // fix: reloading dwm keeps all the hidden clients hidden
+	Monitor *m;
+	Client *c;
+	for (m = mons; m; m = m->next) {
+		if (m) {
+			for (c = m->stack; c; c = c->next)
+				if (c && HIDDEN(c)) showwin(c, 1);
+		}
+	}
+
   running = 0;
 }
 
@@ -2371,6 +2508,46 @@ seturgent(Client *c, int urg)
 }
 
 void
+show(const Arg *arg)
+{
+	showwin(selmon->sel, 1);
+}
+
+void
+showall(const Arg *arg)
+{
+	Client *c = NULL;
+	for (c = selmon->clients; c; c = c->next) {
+		if (ISVISIBLE(c))
+			showwin(c, 1);
+	}
+	if (!selmon->sel) {
+		for (c = selmon->clients; c && !ISVISIBLE(c); c = c->next);
+		if (c)
+			focus(c);
+	}
+	restack(selmon);
+}
+
+void
+showwin(Client *c, int clearflag)
+{
+  if (!c) {
+    return;
+  }
+  if (clearflag) {
+    c->hid = 0;
+  }
+	if (!HIDDEN(c))
+		return;
+
+	XMapWindow(dpy, c->win);
+	setclientstate(c, NormalState);
+	arrange(c->mon);
+
+}
+
+void
 showhide(Client *c)
 {
   if (!c)
@@ -2440,7 +2617,7 @@ tagmon(const Arg *arg)
   if (!selmon->sel || !mons->next)
     return;
   sendmon(c, dirtomon(arg->i));
-  switchclient(c);
+  switchclient(c, 1);
 }
 
 /**
@@ -2679,6 +2856,21 @@ toggleoverview(const Arg *arg)
         return;
 
     uint target = selmon->sel ? selmon->sel->tags : selmon->seltags;
+    if (selmon->isoverview) {
+      // 隐藏所有应该hide窗口
+      Client *c = NULL;
+      for (c = selmon->clients; c; c = c->next) {
+        if (ISVISIBLE(c) && c->hid && c != selmon->sel)
+          hidewin(c);
+      }
+    } else {
+      // 打开所有hide窗口
+      Client *c = NULL;
+      for (c = selmon->clients; c; c = c->next) {
+        if (ISVISIBLE(c))
+          showwin(c, 0);
+      }
+    }
     selmon->isoverview ^= 1;
     if (ISTAG(target)) {
       arrange(selmon);
@@ -2692,12 +2884,40 @@ unfocus(Client *c, int setfocus)
 {
   if (!c)
     return;
+
+  if (c->hid)
+    hidewin(c);
+
   grabbuttons(c, 0);
   XSetWindowBorder(dpy, c->win, scheme[SchemeNorm][ColBorder].pixel);
   if (setfocus) {
     XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
     XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
   }
+}
+
+void
+togglewin(const Arg *arg)
+{
+	Client *c = (Client*)arg->v;
+  if (!c) {
+    c = selmon->sel;
+  }
+	if (c == selmon->sel) {
+    if (c->hid) {
+			showwin(c, 1);
+    } else {
+      hidewin(c);
+      focus(NULL);
+    }
+	} else {
+		if (c->hid) {
+			showwin(c, 1);
+    } else {
+      hidewin(c);
+    }
+	}
+  arrange(c->mon);
 }
 
 void
@@ -3285,7 +3505,7 @@ switchprevclient(const Arg *arg) {
       f = f->next;
     }
     if (f) {
-      switchclient(f->c);
+      switchclient(f->c, 1);
     } else if (switchmode != SWITCH_WIN) {
       switchprevclient(&(Arg){.ui = SWITCH_WIN});
     }
@@ -3294,7 +3514,7 @@ switchprevclient(const Arg *arg) {
 
 // 切换到指定client
 void
-switchclient(Client *c) {
+switchclient(Client *c, int showhid) {
   if (selmon->sel == c) {
     return;
   }
@@ -3305,6 +3525,10 @@ switchclient(Client *c) {
   // 如果当前tag下不可见，跳转到相应的tag上
   if (!ISVISIBLE(c)) {
     view(&(Arg) { .ui = c->tags });
+  }
+  // 展示选中的隐藏窗口
+  if (showhid && HIDDEN(c)) {
+    showwin(c, 0);
   }
   // 聚焦并重置栈
   focus(c);
