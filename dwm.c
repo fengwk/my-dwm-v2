@@ -2356,9 +2356,9 @@ setlayout(const Arg *arg)
 
   Arg *a = &((Arg) {0});
   // 如果当前布局与默认布局不一致则切换布局
-  if (arg && arg->v != selmon->lt[selmon->sellt]) {
-    a->v = arg->v;
-  }
+  // if (arg && arg->v != selmon->lt[selmon->sellt]) {
+  //   a->v = arg->v;
+  // }
 
   unsigned int i;
   if (!a || !a->v || a->v != selmon->lt[selmon->sellt])
@@ -2913,6 +2913,7 @@ togglewin(const Arg *arg)
 	} else {
 		if (c->hid) {
 			showwin(c, 1);
+      focus(c);
     } else {
       hidewin(c);
     }
