@@ -2352,10 +2352,14 @@ setlayout(const Arg *arg)
 {
 
   Arg *a = &((Arg) {0});
-  // 如果当前布局与默认布局不一致则切换布局
-  // if (arg && arg->v != selmon->lt[selmon->sellt]) {
-  //   a->v = arg->v;
-  // }
+  if (LAYOUT_TOGGLE) {
+    // 如果当前布局与默认布局不一致则切换布局
+    if (arg && arg->v != selmon->lt[selmon->sellt]) {
+      a->v = arg->v;
+    }
+  } else {
+    a->v = arg->v;
+  }
 
   unsigned int i;
   if (!a || !a->v || a->v != selmon->lt[selmon->sellt])

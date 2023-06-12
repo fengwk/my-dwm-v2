@@ -149,7 +149,11 @@ static const Layout layouts[] = {
   { "><>",      NULL,               0 },    /* no layout function means floating behavior */
 };
 
+// 最小化图标
 #define HIDETAG "⬇ "
+
+// layout相同时是否回退
+#define LAYOUT_TOGGLE 1
 
 /* key definitions */
 #define NOMODKEY 0
