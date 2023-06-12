@@ -153,7 +153,7 @@ static const Layout layouts[] = {
 #define HIDETAG "⬇ "
 
 // layout相同时是否回退
-#define LAYOUT_TOGGLE 1
+#define LAYOUT_TOGGLE 0
 
 /* key definitions */
 #define NOMODKEY 0
@@ -308,9 +308,11 @@ static const Key keys[] = {
   { MODKEY,                       XK_KP_Enter,  zoom,            {0} },
   { Mod4Mask,                     XK_w,         toggleoverview,  {0} },          // 窗口预览
   // { MODKEY,                       XK_Tab,       view,            {0} },          // 切换到上一个tag
-  { MODKEY,                       XK_Tab,       switchprevclient,{.ui = SWITCH_DIFF_TAG} },    // 切换到上一个不同tag的聚焦窗口
-  { Mod4Mask,                     XK_Tab,       switchprevclient,{.ui = SWITCH_SAME_TAG} },    // 切换到上一个相同tag的聚焦窗口
-  { Mod4Mask|ShiftMask,           XK_Tab,       switchprevclient,{.ui = SWITCH_WIN} },         // 切换到上一个聚焦窗口
+  { MODKEY,                       XK_Tab,       switchprevclient,{.ui = SWITCH_SMART} },    // 切换到上一个不同tag的聚焦窗口
+  { MODKEY|ShiftMask,             XK_Tab,       switchprevclient,{.ui = SWITCH_DIFF_TAG} },    // 切换到上一个不同tag的聚焦窗口
+  // { MODKEY,                       XK_Tab,       switchprevclient,{.ui = SWITCH_DIFF_TAG} },    // 切换到上一个不同tag的聚焦窗口
+  // { Mod4Mask,                     XK_Tab,       switchprevclient,{.ui = SWITCH_SAME_TAG} },    // 切换到上一个相同tag的聚焦窗口
+  // { Mod4Mask|ShiftMask,           XK_Tab,       switchprevclient,{.ui = SWITCH_WIN} },         // 切换到上一个聚焦窗口
   { MODKEY|ShiftMask,             XK_Tab,       view,            {0} },                        // 切换到前一个tag
   { MODKEY|ShiftMask,             XK_c,         killclient,      {0} },
   { MODKEY,                       XK_c,         togglewin,       {0} },
