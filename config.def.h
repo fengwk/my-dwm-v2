@@ -290,12 +290,12 @@ static const Key keys[] = {
   /* 窗口管理 */
   { MODKEY|ShiftMask,             XK_f,         fullscreen,      {0} },          // 全屏
   { MODKEY,                       XK_b,         togglebar,       {0} },          // 状态栏开关
-  { MODKEY,                       XK_j,         focusstackvis,   {.i = +1 } },   // 向栈底移动
-  { MODKEY,                       XK_k,         focusstackvis,   {.i = -1 } },   // 向栈顶移动
-  { MODKEY|ShiftMask,             XK_j,         focusstackhid,   {.i = +1 } },
-  { MODKEY|ShiftMask,             XK_k,         focusstackhid,   {.i = -1 } },
-  { MODKEY|Mod4Mask,              XK_j,         focusstackhidc,  {.i = +1 } },
-  { MODKEY|Mod4Mask,              XK_k,         focusstackhidc,  {.i = -1 } },
+  { MODKEY,                       XK_j,         focusstackhid,   {.i = +1 } },   // 向栈底移动
+  { MODKEY,                       XK_k,         focusstackhid,   {.i = -1 } },   // 向栈顶移动
+  // { MODKEY|ShiftMask,             XK_j,         focusstackhid,   {.i = +1 } },
+  // { MODKEY|ShiftMask,             XK_k,         focusstackhid,   {.i = -1 } },
+  // { MODKEY|Mod4Mask,              XK_j,         focusstackhidc,  {.i = +1 } },
+  // { MODKEY|Mod4Mask,              XK_k,         focusstackhidc,  {.i = -1 } },
   { MODKEY,                       XK_i,         incnmaster,      {.i = +1 } },   // 增加主工作区数量
   { MODKEY,                       XK_d,         incnmaster,      {.i = -1 } },   // 减少主工作区数量
   { MODKEY,                       XK_h,         setmfact,        {.f = -0.05} }, // 减少主工作区空间
@@ -323,10 +323,10 @@ static const Key keys[] = {
   { MODKEY|ShiftMask,             XK_period,    tagmon,          {.i = +1 } }, // 将当前窗口发送到下一个监视器
   // { MODKEY|ShiftMask,             XK_Left,      viewtoleft,      {0} }, // 切换到左侧tag
   // { MODKEY|ShiftMask,             XK_Right,     viewtoright,     {0} }, // 切换到右侧tag
-  { MODKEY|ShiftMask,             XK_h,         viewtoleft,      {0} }, // 切换到左侧tag
-  { MODKEY|ShiftMask,             XK_l,         viewtoright,     {0} }, // 切换到右侧tag
-  // { MODKEY|ShiftMask,             XK_j,         viewtoleft,      {0} }, // 切换到左侧tag
-  // { MODKEY|ShiftMask,             XK_k,         viewtoright,     {0} }, // 切换到右侧tag
+  // { MODKEY|ShiftMask,             XK_h,         viewtoleft,      {0} }, // 切换到左侧tag
+  // { MODKEY|ShiftMask,             XK_l,         viewtoright,     {0} }, // 切换到右侧tag
+  { MODKEY|ShiftMask,             XK_j,         viewtoleft,      {0} }, // 切换到左侧tag
+  { MODKEY|ShiftMask,             XK_k,         viewtoright,     {0} }, // 切换到右侧tag
   // { MODKEY,                       XK_bracketleft,  viewtoleft,   {0} },
   // { MODKEY,                       XK_bracketright, viewtoright,  {0} },
   TAGKEYS(                        XK_1,                          0)
@@ -363,6 +363,6 @@ static const Button buttons[] = {
   { ClkWinTitle,          0,              Button1,        focusclient,    {0} },       // 切换到选中的客户端
   { ClkWinTitle,          0,              Button2,        zoom,           {0} },       // 交换master
   { ClkWinTitle,          0,              Button3,        togglewin,      {0} },       // 切换到选中的客户端
-  { ClkWinTitle,          0,              Button4,        focusstackvis,  {.i = -1} }, // 在标题栏上鼠标上滚切换到上一个客户端
-  { ClkWinTitle,          0,              Button5,        focusstackvis,  {.i = +1} }, // 在标题栏上鼠标上滚切换到下一个客户端
+  { ClkWinTitle,          0,              Button4,        focusstackhid,  {.i = -1} }, // 在标题栏上鼠标上滚切换到上一个客户端
+  { ClkWinTitle,          0,              Button5,        focusstackhid,  {.i = +1} }, // 在标题栏上鼠标上滚切换到下一个客户端
 };

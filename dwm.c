@@ -1165,10 +1165,7 @@ focus(Client *c)
   if (!c || !ISVISIBLE(c))
     for (c = selmon->stack; c && (!ISVISIBLE(c) || HIDDEN(c)); c = c->snext);
   if (selmon->sel && selmon->sel != c) {
-    Client *sel = selmon->sel;
-    unfocus(sel, 0);
-    if (c)
-      arrange(c->mon);
+    unfocus(selmon->sel, 0);
   }
   if (c) {
     if (c->mon != selmon)
@@ -2356,9 +2353,9 @@ setlayout(const Arg *arg)
 
   Arg *a = &((Arg) {0});
   // 如果当前布局与默认布局不一致则切换布局
-  if (arg && arg->v != selmon->lt[selmon->sellt]) {
-    a->v = arg->v;
-  }
+  // if (arg && arg->v != selmon->lt[selmon->sellt]) {
+  //   a->v = arg->v;
+  // }
 
   unsigned int i;
   if (!a || !a->v || a->v != selmon->lt[selmon->sellt])
@@ -2885,8 +2882,10 @@ unfocus(Client *c, int setfocus)
   if (!c)
     return;
 
-  if (c->hid)
+  if (c->hid && !HIDDEN(c)) {
     hidewin(c);
+    arrange(c->mon);
+  }
 
   grabbuttons(c, 0);
   XSetWindowBorder(dpy, c->win, scheme[SchemeNorm][ColBorder].pixel);
@@ -2913,6 +2912,7 @@ togglewin(const Arg *arg)
 	} else {
 		if (c->hid) {
 			showwin(c, 1);
+      focus(c);
     } else {
       hidewin(c);
     }
