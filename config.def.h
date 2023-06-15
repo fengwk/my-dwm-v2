@@ -109,6 +109,7 @@ static const TagMapEntry tagnamemap[] = {
   { "Tor Browser", "" },
   { "Clash for Windows", "" },
   { "draw.io", "" },
+  { "feh", "" },
 };
 
 // https://dwm.suckless.org/customisation/rules/
@@ -308,10 +309,10 @@ static const Key keys[] = {
   { MODKEY,                       XK_KP_Enter,  zoom,            {0} },
   { Mod4Mask,                     XK_w,         toggleoverview,  {0} },          // 窗口预览
   // { MODKEY,                       XK_Tab,       view,            {0} },          // 切换到上一个tag
-  { MODKEY,                       XK_Tab,       switchprevclient,{.ui = SWITCH_SMART} },    // 切换到上一个不同tag的聚焦窗口
-  { MODKEY|ShiftMask,             XK_Tab,       switchprevclient,{.ui = SWITCH_DIFF_TAG} },    // 切换到上一个不同tag的聚焦窗口
-  // { MODKEY,                       XK_Tab,       switchprevclient,{.ui = SWITCH_DIFF_TAG} },    // 切换到上一个不同tag的聚焦窗口
-  // { Mod4Mask,                     XK_Tab,       switchprevclient,{.ui = SWITCH_SAME_TAG} },    // 切换到上一个相同tag的聚焦窗口
+  // { MODKEY,                       XK_Tab,       switchprevclient,{.ui = SWITCH_WIN} },
+  // { MODKEY|ShiftMask,             XK_Tab,       switchprevclient,{.ui = SWITCH_DIFF_TAG} },
+  { MODKEY,                       XK_Tab,       switchprevclient,{.ui = SWITCH_DIFF_TAG} },    // 切换到上一个不同tag的聚焦窗口
+  { Mod4Mask,                     XK_Tab,       switchprevclient,{.ui = SWITCH_SAME_TAG} },    // 切换到上一个相同tag的聚焦窗口
   // { Mod4Mask|ShiftMask,           XK_Tab,       switchprevclient,{.ui = SWITCH_WIN} },         // 切换到上一个聚焦窗口
   { MODKEY|ShiftMask,             XK_Tab,       view,            {0} },                        // 切换到前一个tag
   { MODKEY|ShiftMask,             XK_c,         killclient,      {0} },

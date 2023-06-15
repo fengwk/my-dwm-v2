@@ -93,7 +93,7 @@ enum { ClkTagBar, ClkLtSymbol, ClkStatusText, ClkWinTitle,
 enum { WIN_UP, WIN_DOWN, WIN_LEFT, WIN_RIGHT }; /* movewin */
 enum { V_EXPAND, V_REDUCE, H_EXPAND, H_REDUCE }; /* resizewins */
 enum { MOUSE_UP, MOUSE_RIGHT, MOUSE_DOWM, MOUSE_LEFT }; /* movemouse */
-enum { SWITCH_WIN, SWITCH_SAME_TAG, SWITCH_DIFF_TAG, SWITCH_SMART }; /* switch mode */
+enum { SWITCH_WIN,  SWITCH_SAME_TAG,  SWITCH_DIFF_TAG,  SWITCH_SMART }; /* switch mode */
 
 typedef union {
   int i;
@@ -253,6 +253,7 @@ static void manage(Window w, XWindowAttributes *wa);
 static void mappingnotify(XEvent *e);
 static void maprequest(XEvent *e);
 static void monocle(Monitor *m);
+static void monoclehid(Monitor *m);
 static void motionnotify(XEvent *e);
 static void movemouse(const Arg *arg);
 static Client *nexttiled(Client *c);
@@ -1630,6 +1631,21 @@ monocle(Monitor *m)
 }
 
 void
+monoclehid(Monitor *m)
+{
+  unsigned int n = 0;
+  Client *c;
+
+  for (c = m->clients; c; c = c->next)
+    if (ISVISIBLE(c))
+      n++;
+  if (n > 0) /* override layout symbol */
+    snprintf(m->ltsymbol, sizeof m->ltsymbol, "[%d]", n);
+  for (c = nexttiled(m->clients); c; c = nexttiled(c->next))
+    resize(c, m->wx, m->wy, m->ww - 2 * c->bw, m->wh - 2 * c->bw, 0);
+}
+
+void
 motionnotify(XEvent *e)
 {
   static Monitor *mon = NULL;
@@ -2905,6 +2921,9 @@ togglewin(const Arg *arg)
 	Client *c = (Client*)arg->v;
   if (!c) {
     c = selmon->sel;
+  }
+  if (!c) {
+    return;
   }
 	if (c == selmon->sel) {
     if (c->hid) {
