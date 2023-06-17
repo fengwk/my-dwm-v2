@@ -52,9 +52,6 @@ static const unsigned int alphas[][3]      = {
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
-/* 鼠标移动加速倍数 */
-static const int mousemovequick = 3;
-
 // 展示标签主客户端标题
 static const char ptagf[] = "%s %s";  /* format of a tag label */
 static const char etagf[] = "%s";  /* format of an empty tag */
@@ -231,11 +228,11 @@ static const Key keys[] = {
   { Mod4Mask,                     XK_c,         spawn,           {.v = wpchange } },       // 切换壁纸
 
   /* 间隙调整 */
-  { MODKEY|Mod4Mask|ShiftMask,    XK_BackSpace, togglesmartgaps, {0} },        // 智能间隙开关（仅有一个client时是否显示间隙）
-  { MODKEY|Mod4Mask,              XK_BackSpace, togglegaps,      {0} },        // 间隙开关
-  { MODKEY|Mod4Mask,              XK_0,         defaultgaps,     {0} },        // 重置间隙
-  { MODKEY|Mod4Mask,              XK_equal,     incrgaps,        {.i = +1 } }, // 增大间隙
-  { MODKEY|Mod4Mask,              XK_minus,     incrgaps,        {.i = -1 } }, // 减少间隙
+  { Mod4Mask|ShiftMask,           XK_BackSpace, togglesmartgaps, {0} },        // 智能间隙开关（仅有一个client时是否显示间隙）
+  { Mod4Mask,                     XK_BackSpace, togglegaps,      {0} },        // 间隙开关
+  { Mod4Mask,                     XK_0,         defaultgaps,     {0} },        // 重置间隙
+  { Mod4Mask,                     XK_equal,     incrgaps,        {.i = +1 } }, // 增大间隙
+  { Mod4Mask,                     XK_minus,     incrgaps,        {.i = -1 } }, // 减少间隙
   // { MODKEY|Mod4Mask,              XK_h,         incrgaps,        {.i = +1 } },
   // { MODKEY|Mod4Mask,              XK_l,         incrgaps,        {.i = -1 } },
   // { MODKEY|Mod4Mask|ShiftMask,    XK_h,         incrogaps,       {.i = +1 } },
@@ -283,14 +280,6 @@ static const Key keys[] = {
   { MODKEY|ControlMask,              XK_Right,     mousemove,       {.ui = MOUSE_RIGHT} }, // 向右移动鼠标光标
   { MODKEY|ControlMask,              XK_Down,      mousemove,       {.ui = MOUSE_DOWM} },  // 向下移动鼠标光标
   { MODKEY|ControlMask,              XK_Left,      mousemove,       {.ui = MOUSE_LEFT} },  // 向左移动鼠标光标
-  { MODKEY|ControlMask|ShiftMask,    XK_k,         mousemove,       {.ui = MOUSE_UP + 4*mousemovequick} },    // 向上移动鼠标光标-加速版
-  { MODKEY|ControlMask|ShiftMask,    XK_l,         mousemove,       {.ui = MOUSE_RIGHT + 4*mousemovequick} }, // 向右移动鼠标光标-加速版
-  { MODKEY|ControlMask|ShiftMask,    XK_j,         mousemove,       {.ui = MOUSE_DOWM + 4*mousemovequick} },  // 向下移动鼠标光标-加速版
-  { MODKEY|ControlMask|ShiftMask,    XK_h,         mousemove,       {.ui = MOUSE_LEFT + 4*mousemovequick} },  // 向左移动鼠标光标-加速版
-  { MODKEY|ControlMask|ShiftMask,    XK_Up,        mousemove,       {.ui = MOUSE_UP + 4*mousemovequick} },    // 向上移动鼠标光标-加速版
-  { MODKEY|ControlMask|ShiftMask,    XK_Right,     mousemove,       {.ui = MOUSE_RIGHT + 4*mousemovequick} }, // 向右移动鼠标光标-加速版
-  { MODKEY|ControlMask|ShiftMask,    XK_Down,      mousemove,       {.ui = MOUSE_DOWM + 4*mousemovequick} },  // 向下移动鼠标光标-加速版
-  { MODKEY|ControlMask|ShiftMask,    XK_Left,      mousemove,       {.ui = MOUSE_LEFT + 4*mousemovequick} },  // 向左移动鼠标光标-加速版
 
   /* 窗口管理 */
   { MODKEY|ShiftMask,             XK_f,         fullscreen,      {0} },          // 全屏

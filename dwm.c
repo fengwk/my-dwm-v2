@@ -42,6 +42,8 @@
 #include <X11/extensions/Xinerama.h>
 #endif /* XINERAMA */
 #include <X11/Xft/Xft.h>
+#include <sys/time.h>
+#include <math.h>
 
 #include "drw.h"
 #include "util.h"
@@ -372,6 +374,8 @@ static int bh;               /* bar height */
 static int lrpad;            /* sum of left and right padding for text */
 static int smartgaps  = 1;   /* 1 means no outer gap when there is only one window */
 static int enablegaps = 1;   /* enables gaps, used by togglegaps */
+static long long beginmousemove = 0; // 开始movemouse的时间戳
+static long long prevmousemove = 0; // 前一次movemouse的时间戳
 static int (*xerrorxlib)(Display *, XErrorEvent *);
 static unsigned int numlockmask = 0;
 static void (*handler[LASTEvent]) (XEvent *) = {
@@ -1000,8 +1004,8 @@ drawbar(Monitor *m)
    - `stw`：系统托盘的宽度。
    - `mw`：每个客户端名称的最大宽度。
    - `ew`：超出最大宽度的宽度总和。
-   - `boxs`：客户端名称旁边小方块的大小。
-   - `boxw`：客户端名称旁边小方块的宽度。
+   - `boxs`：浮动客户端名称旁边小方块的大小。
+   - `boxw`：浮动客户端名称旁边小方块的宽度。
    - `i`：循环计数器。
    - `occ`：当前可见的客户端所在标签的二进制表示。
    - `urg`：当前有紧急状态的客户端所在标签的二进制表示。
@@ -1099,6 +1103,7 @@ drawbar(Monitor *m)
           remainder--;
         }
 
+        // 绘制标题
         if (c->hid) {
           char *hidename = ecalloc(1, strlen(c->name) + strlen(HIDETAG) + 1);
           sprintf(hidename, "%s%s", HIDETAG, c->name);
@@ -1106,6 +1111,10 @@ drawbar(Monitor *m)
           free(hidename);
         } else {
           drw_text(drw, x, 0, tabw, bh, lrpad / 2, c->name, 0);
+        }
+        // 绘制浮动标
+        if (c->isfloating) {
+          drw_rect(drw, x + boxs, boxs, boxw, boxw, c->isfixed, 0);
         }
         x += tabw;
       }
@@ -3746,6 +3755,8 @@ inarea(int x, int y, int rx, int ry, int rw, int rh) {
   return x > rx && x < rx + rw && y > ry && y < ry + rh;
 }
 
+
+
 void
 movewin(const Arg *arg)
 {
@@ -3758,26 +3769,68 @@ movewin(const Arg *arg)
         return;
     if (!c->isfloating)
         togglefloating(NULL);
-    x = nx = c->x;
-    y = ny = c->y;
+    x = nx = c->x; // x, next x
+    y = ny = c->y; // y, next y
+    int gap;
     switch (arg->ui) {
         case WIN_UP:
             ny -= c->mon->wh / movewinthresholdv;
+            // 这里只取内部间距
+            gap = gappih;
+            for (Client *tc = c->mon->clients; tc; tc = tc->next) {
+              int tcty;
+              if (tc != c && ISVISIBLE(tc) && !HIDDEN(tc) 
+                  && tc->isfloating && !tc->isfullscreen 
+                  && (tcty = tc->y + HEIGHT(tc) + gap) >= ny && tcty < y) {
+                ny = tcty;
+              }
+            }
             ny = MAX(ny, c->mon->wy - HEIGHT(c) * 0.9);
             break;
         case WIN_DOWN:
             ny += c->mon->wh / movewinthresholdv;
+            // 这里只取内部间距
+            gap = gappih;
+            for (Client *tc = c->mon->clients; tc; tc = tc->next) {
+              int tcty;
+              if (tc != c && ISVISIBLE(tc) && !HIDDEN(tc) 
+                  && tc->isfloating && !tc->isfullscreen 
+                  && (tcty = tc->y - gap - HEIGHT(c)) <= ny && tcty > y) {
+                ny = tcty;
+              }
+            }
             ny = MIN(ny, c->mon->wy + c->mon->wh - HEIGHT(c) * 0.1);
             break;
         case WIN_LEFT:
             nx -= c->mon->ww / movewinthresholdh;
+            // 这里只取内部间距
+            gap = gappiv;
+            for (Client *tc = c->mon->clients; tc; tc = tc->next) {
+              int tctx;
+              if (tc != c && ISVISIBLE(tc) && !HIDDEN(tc) 
+                  && tc->isfloating && !tc->isfullscreen 
+                  && (tctx = tc->x + WIDTH(tc) + gap) >= nx && tctx < x) {
+                nx = tctx;
+              }
+            }
             nx = MAX(nx, c->mon->wx - WIDTH(c) * 0.9);
             break;
         case WIN_RIGHT:
             nx += c->mon->ww / movewinthresholdh;
+            // 这里只取内部间距
+            gap = gappiv;
+            for (Client *tc = c->mon->clients; tc; tc = tc->next) {
+              int tctx;
+              if (tc != c && ISVISIBLE(tc) && !HIDDEN(tc) 
+                  && tc->isfloating && !tc->isfullscreen 
+                  && (tctx = tc->x - gap - WIDTH(c)) <= nx && tctx > x) {
+                nx = tctx;
+              }
+            }
             nx = MIN(nx, c->mon->wx + c->mon->ww - WIDTH(c) * 0.1);
             break;
     }
+
     resize(c, nx, ny, c->w, c->h, 1);
     getrootptr(&px, &py);
     if (inarea(px, py, x, y, c->w, c->h)) {
@@ -3840,11 +3893,33 @@ mousefocus(const Arg *arg) {
 
 void
 mousemove(const Arg *arg) {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  long long curms = (long long) tv.tv_sec * 1000 + tv.tv_usec/ 1000;
+  if (curms - prevmousemove < 100) {
+    if (beginmousemove == 0) {
+      beginmousemove = curms;
+    }
+  } else {
+    beginmousemove = 0;
+  }
+  prevmousemove = curms;
+
   if (arg) {
+    // v是鼠标移动的速度
+    // k是基础速度
+    // t是按压时间
+    // e是自然对数的底数，约等于2.71828
+    double base = 15;
+    double t = beginmousemove == 0 ? 0 : (curms - beginmousemove);
+    double delta = 400;
+    double deltams = 1000 * 2;
+    double v = base + delta * tanh(t / deltams);
+    int step = ceil(v);
+
     int x, y;
     getrootptr(&x, &y);
     int dir = arg->ui % 4;
-    int step = (arg->ui / 4 + 1) * 35;
     if (dir == MOUSE_UP) {
       y -= step;
     } else if (dir == MOUSE_RIGHT) {
