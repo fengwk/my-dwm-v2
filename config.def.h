@@ -13,6 +13,10 @@ static const unsigned int gappih    = 10;       /* horiz inner gap between windo
 static const unsigned int gappiv    = 10;       /* vert inner gap between windows */
 static const unsigned int gappoh    = 10;       /* horiz outer gap between windows and screen edge */
 static const unsigned int gappov    = 10;       /* vert outer gap between windows and screen edge */
+static const unsigned int fgappih   = gappih;   // for float
+static const unsigned int fgappiv   = gappiv;   // for float
+static const unsigned int fgappoh   = gappoh;   // for float
+static const unsigned int fgappov   = gappov;   // for float
 static const int movewinthresholdv  = 12; /* 垂直：这个阈值越大movewin操作改变的范围越小 */
 static const int movewinthresholdh  = 16; /* 水平：这个阈值越大movewin操作改变的范围越小 */
 static const int resizewinthresholdv= 20; /* 垂直：这个阈值越大resizewin操作改变的范围越小 */
@@ -70,6 +74,7 @@ static const TagMapEntry tagnamemap[] = {
   { "wechat.exe", "" },
   { "Postman", "" },
   { "XMind", "" },
+  { "Xmind", "" },
   { "Java", "" },
   { "Eclipse", "" },
   { "xiaoyi_assistant", "嬨" },
@@ -85,6 +90,7 @@ static const TagMapEntry tagnamemap[] = {
   { "Optimus Manager Qt", "" },
   { "Nm-connection-editor", "" },
   { "Xfce4-power-manager-settings", "" },
+  { "freedesktop", "" },
   { "Lxappearance", "" },
   { "qt5ct", "" },
   { "fcitx5-config-qt", "" },
@@ -116,18 +122,19 @@ static const Rule rules[] = {
    *	WM_CLASS(STRING) = instance, class
    *	WM_NAME(STRING) = title
    */
-  /* class            instance    title    tags mask    isfloating    monitor    hideborder    fixrender */
-  { "Peek",           NULL,       NULL,    0,           1,            -1,        0,            0},
-  { "popo",           NULL,       NULL,    0,           1,            -1,        1,            0},
-  { "wechat.exe",     NULL,       NULL,    0,           1,            -1,        0,            0},
-  { "QQ",             NULL,       NULL,    0,           1,            -1,        0,            0},
-  { "feh",            NULL,       NULL,    0,           1,            -1,        0,            0},
-  { "XMind",          NULL,       NULL,    0,           0,            -1,        0,            1},
-  { "xiaoyi_assistant", NULL,     NULL,    1<<8,        0,            -1,        0,            1},
-  { "jetbrains-idea", NULL,       NULL,    0,           0,            -1,        0,            0},
-  { "jetbrains-idea-ce", NULL,    NULL,    0,           0,            -1,        0,            0},
-  { "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1, 0,        0},
-  { "netease-cloud-music", NULL,  NULL,    0,           1,            -1,        0,            0},
+  /* class            instance    title    tags mask    isfloating    monitor    hideborder    fixrender    x(float)    y(float)  width(float)    height(float) */
+  { "Peek",           NULL,       NULL,    0,           1,            -1,        0,            0,           0,          0,        -1,             -1      },
+  { "popo",           NULL,       NULL,    0,           1,            -1,        1,            0,           0,          0,        -1,             -1      },
+  { "wechat.exe",     NULL,       NULL,    0,           1,            -1,        0,            0,           0,          0,        -1,             -1      },
+  { "QQ",             NULL,       NULL,    0,           1,            -1,        0,            0,           0,          0,        -1,             -1      },
+  { "feh",            NULL,       NULL,    0,           1,            -1,        0,            0,           0,          0,        -1,             -1      },
+  { "XMind",          NULL,       NULL,    0,           0,            -1,        0,            1,           0,          0,        -1,             -1      },
+  { "xiaoyi_assistant", NULL,     NULL,    1<<8,        0,            -1,        0,            1,           0,          0,        -1,             -1      },
+  { "jetbrains-idea", NULL,       NULL,    0,           0,            -1,        0,            0,           0,          0,        -1,             -1      },
+  { "jetbrains-idea-ce", NULL,    NULL,    0,           0,            -1,        0,            0,           0,          0,        -1,             -1      },
+  { "com-xk72-charles-gui-MainWithClassLoader", NULL, "Find in Session 1", 0, 1, -1, 0,        0,           0,          0,        -1,             -1      },
+  { "netease-cloud-music", NULL,  NULL,    0,           1,            -1,        0,            0,           0,          0,        -1,             -1      },
+  { "Alacritty",      NULL,       "#todolist",  0,      1,            -1,        0,            0,           -1550,      0,        1550,           800     },
 };
 
 // overview
@@ -168,22 +175,14 @@ static const Layout layouts[] = {
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
-static const char *rofi_win[] = { "rofi", "-show", "window", NULL };
-// static const char *rofi_run[] = { "rofi", "-show", "run", NULL };
-// static const char *rofi_drun[] = { "rofi", "-show", "drun", NULL };
-static const char *rofi_run[] = { "rofi", "-show", "combi", "-combi-modes", "drun,run", "-modes", "combi", NULL };
-static const char *rofi_ssh[] = { "rofi", "-show", "ssh", NULL };
+static const char *rofi_run[] = { "rofi-wrapper.sh", "-show", "combi", "-combi-modes", "window,drun,run", "-modes", "combi", NULL };
 static const char *rofi_browser[] = { "rofi-broswer", NULL };
 static const char *rofi_clipster[] = { "rofi-clipster", NULL };
-// static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "st", NULL };
-// static const char *termcmd[]  = { "st", NULL };
-// static const char *termcmd[]  = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "alacritty", NULL };
-static const char *termcmd[]  = { "alacritty", NULL };
+static const char *rofi_list[] = { "rofi-list", NULL };
+static const char *termcmd[]  = { "dwm-termcmd", NULL };
 static const char scratchpadname[] = "scratchpad";
-// static const char *scratchpadcmd[] = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "st", "-t", scratchpadname, "-g", "120x34", NULL };
-// static const char *scratchpadcmd[] = { "st", "-t", scratchpadname, "-g", "120x34", NULL };
-// static const char *scratchpadcmd[] = { "env", "LANG=en_US.UTF-8", "LANGUAGE=en_US", "alacritty", "-t", scratchpadname, NULL };
-static const char *scratchpadcmd[] = { "alacritty", "-t", scratchpadname, NULL };
+static const char todolistname[] = "todolist";
+static const char *scratchpadcmd[] = { "dwm-scratchpadcmd", scratchpadname, NULL };
 static const char *flameshotcmd[] = { "flameshot-wrapper.sh", "gui", NULL };
 static const char *flameshotocrcmd[] = { "flameshot-ocr.sh", NULL };
 static const char *monitorswitch1[] = { "monitor-switch.sh", "1", NULL };
@@ -204,12 +203,10 @@ static const Key keys[] = {
   /* modifier                     key           function         argument */
 
   /* rofi */
-  { MODKEY,                       XK_w,         spawn,           {.v = rofi_win } },
   { MODKEY,                       XK_p,         spawn,           {.v = rofi_run } },
-  // { MODKEY|ShiftMask,             XK_p,         spawn,           {.v = rofi_drun } },
   { MODKEY,                       XK_s,         spawn,           {.v = rofi_browser } },
-  { MODKEY|ShiftMask,             XK_s,         spawn,           {.v = rofi_ssh } },
   { MODKEY,                       XK_v,         spawn,           {.v = rofi_clipster } },
+  { MODKEY|ShiftMask,             XK_v,         spawn,           {.v = rofi_list } },
 
   /* terminal */
   { MODKEY|ShiftMask,             XK_Return,    spawn,           {.v = termcmd } },
@@ -249,7 +246,7 @@ static const Key keys[] = {
   // { MODKEY|ShiftMask,             XK_o,         incrovgaps,      {.i = -1 } }, // 缩小水平外侧间隙
 
   /* 窗口控制 */
-  { Mod4Mask,                     XK_f,         togglefloating,  {0} },                  // 窗口浮动开关
+  { Mod4Mask,                     XK_f,         togglefloatingattach, {0} },      // 窗口浮动开关
   { Mod4Mask,                     XK_Up,        movewin,         {.ui = WIN_UP} },       // 向上移动窗口
   { Mod4Mask,                     XK_Down,      movewin,         {.ui = WIN_DOWN} },     // 向下移动窗口
   { Mod4Mask,                     XK_Left,      movewin,         {.ui = WIN_LEFT} },     // 向左移动窗口

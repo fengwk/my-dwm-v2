@@ -185,6 +185,10 @@ typedef struct {
   int monitor;
   int hideborder;
   int fixrender;
+  int x;
+  int y;
+  int width;
+  int height;
 } Rule;
 
 typedef struct Systray Systray;
@@ -310,6 +314,7 @@ static void tile(Monitor *m);
 static void grid(Monitor *m);
 static void togglebar(const Arg *arg);
 static void togglefloating(const Arg *arg);
+static void togglefloatingattach(const Arg *arg);
 static unsigned int findscratch(Client **c);
 static void togglescratch(const Arg *arg);
 static void toggletag(const Arg *arg);
@@ -339,6 +344,8 @@ static void listwindowpids(Window w, Window pids[], int sz);
 static int inwindowpids(Window w, Window pids[], int sz);
 static int isdialog(Client *c);
 static int isprevclient(int switchmode, Client *src, Client *prev);
+static void setselmon(Monitor *newselmon);
+static void setmonsel(Monitor *m, Client *c);
 static void switchprevclient(const Arg *arg);
 static void switchclient(Client *c, int showhid);
 static void addaccstack(Client *c);
@@ -459,6 +466,20 @@ applyrules(Client *c)
       for (m = mons; m && m->num != r->monitor; m = m->next);
       if (m)
         c->mon = m;
+      if (r->isfloating) {
+        if (r->width > 0)
+          c->w = r->width;
+        if (r->height > 0)
+          c->h = r->height;
+        if (r->x > 0) 
+          c->x = r->x;
+        else if (r->x < 0) 
+          c->x = c->mon->wx + c->mon->ww + r->x;
+        if (r->y > 0) 
+          c->y = r->y;
+        else if (r->y < 0)
+          c->y = c->mon->wy + c->mon->wh + r->y;
+      }
     }
   }
   if (ch.res_class)
@@ -605,7 +626,7 @@ buttonpress(XEvent *e)
   /* focus monitor if necessary */
   if ((m = wintomon(ev->window)) && m != selmon) {
     unfocus(selmon->sel, 1);
-    selmon = m;
+    setselmon(m);
     focus(NULL);
   }
   if (ev->window == selmon->barwin) {
@@ -961,7 +982,7 @@ detachstack(Client *c)
 
   if (c == c->mon->sel) {
     for (t = c->mon->stack; t && !ISVISIBLE(t); t = t->snext);
-    c->mon->sel = t;
+    setmonsel(c->mon, t);
   }
 }
 
@@ -1150,7 +1171,7 @@ enternotify(XEvent *e)
   m = c ? c->mon : wintomon(ev->window);
   if (m != selmon) {
     unfocus(selmon->sel, 1);
-    selmon = m; // 这会导致使用rofi时错误的monitor聚焦（按照光标所在位置聚焦），但去除后会导致自动聚焦桌面失败
+    setselmon(m); // 这会导致使用rofi时错误的monitor聚焦（按照光标所在位置聚焦），但去除后会导致自动聚焦桌面失败
   } else if (!c || c == selmon->sel)
     return;
   focus(c);
@@ -1179,7 +1200,7 @@ focus(Client *c)
   }
   if (c) {
     if (c->mon != selmon)
-      selmon = c->mon;
+      setselmon(c->mon);
     // 取消urgent标识
     if (c->isurgent)
       seturgent(c, 0); 
@@ -1203,7 +1224,7 @@ focus(Client *c)
     XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
     XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
   }
-  selmon->sel = c;
+  setmonsel(selmon, c);
   drawbars();
   addaccstack(c);
 }
@@ -1228,7 +1249,7 @@ focusmon(const Arg *arg)
   if ((m = dirtomon(arg->i)) == selmon)
     return;
   unfocus(selmon->sel, 0);
-  selmon = m;
+  setselmon(m);
   focus(NULL);
 }
 
@@ -1239,7 +1260,7 @@ focusmonbyclient(Client *c) {
     return;
   }
   unfocus(selmon->sel, 0);
-  selmon = m;
+  setselmon(m);
   focus(NULL);
 }
 
@@ -1553,6 +1574,14 @@ manage(Window w, XWindowAttributes *wa)
   c->y = MAX(c->y, c->mon->wy);
   // c->bw = borderpx;
 
+  // 处理浮动布局下的窗口
+  // if (!c->mon->lt[c->mon->sellt] && c->x == 0 && c->y == 0) {
+  //   c->w = c->mon->ww * 3 / 5;
+  //   c->h = c->mon->wh * 3 / 5;
+  //   c->x = c->mon->wx + (c->mon->ww - c->w) / 2;
+  //   c->y = c->mon->wy + (c->mon->wh - c->h) / 2;
+  // }
+
   if (!strcmp(c->name, scratchpadname)) {
     c->mon->tagset[c->mon->seltags] |= c->tags = scratchtag;
     c->isfloating = True;
@@ -1588,7 +1617,7 @@ manage(Window w, XWindowAttributes *wa)
   if (c->mon == selmon) {
     unfocus(selmon->sel, 0);
   }
-  c->mon->sel = c;
+  setmonsel(c->mon, c);
   arrange(c->mon);
 	if (!HIDDEN(c)) {
 		XMapWindow(dpy, c->win);
@@ -1665,7 +1694,7 @@ motionnotify(XEvent *e)
     return;
   if ((m = recttomon(ev->x_root, ev->y_root, 1, 1)) != mon && mon) {
     unfocus(selmon->sel, 1);
-    selmon = m;
+    setselmon(m);
     focus(NULL);
   }
   mon = m;
@@ -1726,7 +1755,7 @@ movemouse(const Arg *arg)
   XUngrabPointer(dpy, CurrentTime);
   if ((m = recttomon(c->x, c->y, c->w, c->h)) != selmon) {
     sendmon(c, m);
-    selmon = m;
+    setselmon(m);
     focus(NULL);
   }
 }
@@ -1937,7 +1966,7 @@ resizemouse(const Arg *arg)
   while (XCheckMaskEvent(dpy, EnterWindowMask, &ev));
   if ((m = recttomon(c->x, c->y, c->w, c->h)) != selmon) {
     sendmon(c, m);
-    selmon = m;
+    setselmon(m);
     focus(NULL);
   }
 }
@@ -2790,6 +2819,28 @@ togglefloating(const Arg *arg)
   arrange(selmon);
 }
 
+void
+togglefloatingattach(const Arg *arg)
+{
+  togglefloating(arg);
+  // if (!selmon->sel)
+  //   return;
+  // if (selmon->sel->isfullscreen) /* no support for fullscreen windows */
+  //   return;
+  // selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
+  // if (selmon->sel->isfloating) {
+  //   Client *c = selmon->sel;
+  //   int w = selmon->ww * 3 / 5;
+  //   int h = selmon->wh * 3 / 5;
+  //   int x = selmon->wx + (selmon->ww - c->w) / 2;
+  //   int y = selmon->wy + (selmon->wh - c->h) / 2;
+  //   resize(c, x, y, w, h, 0);
+  //   // resize(selmon->sel, selmon->sel->x, selmon->sel->y,
+  //   //     selmon->sel->w, selmon->sel->h, 0);
+  // }
+  // arrange(selmon);
+}
+
 unsigned int
 findscratch(Client **sc) {
   unsigned int found = 0;
@@ -3117,7 +3168,7 @@ updategeom(void)
         attachstack(c);
       }
       if (m == selmon)
-        selmon = mons;
+        setselmon(mons);
       cleanupmon(m);
     }
     free(unique);
@@ -3134,8 +3185,8 @@ updategeom(void)
     }
   }
   if (dirty) {
-    selmon = mons;
-    selmon = wintomon(root);
+    setselmon(mons);
+    setselmon(wintomon(root));
   }
   return dirty;
 }
@@ -3504,6 +3555,30 @@ isprevclient(int switchmode, Client *src, Client *prev) {
 }
 
 void
+setselmon(Monitor *newselmon) {
+  if (newselmon) {
+    selmon = newselmon;
+    char cmd[1024];
+    snprintf(cmd, sizeof(cmd),
+        "/bin/bash -c 'mkdir -p ~/.cache/dwm/status && echo %d > ~/.cache/dwm/status/selmon'", newselmon->num);
+    system(cmd);
+  }
+}
+
+void
+setmonsel(Monitor *m, Client *c) {
+  if (m && c) {
+    m->sel = c;
+    if (m == selmon) {
+      char cmd[1024];
+      snprintf(cmd, sizeof(cmd),
+          "/bin/bash -c 'mkdir -p ~/.cache/dwm/status && echo %lu > ~/.cache/dwm/status/selwin'", c->win);
+      system(cmd);
+    }
+  }
+}
+
+void
 switchprevclient(const Arg *arg) {
 
   if (!selmon || !selmon->accstack) {
@@ -3771,63 +3846,101 @@ movewin(const Arg *arg)
         togglefloating(NULL);
     x = nx = c->x; // x, next x
     y = ny = c->y; // y, next y
-    int gap;
+    int gap, tctx, tcty, tx, ty;
     switch (arg->ui) {
         case WIN_UP:
             ny -= c->mon->wh / movewinthresholdv;
-            // 这里只取内部间距
-            gap = gappih;
+            // 窗口吸附
+            gap = fgappih;
             for (Client *tc = c->mon->clients; tc; tc = tc->next) {
-              int tcty;
-              if (tc != c && ISVISIBLE(tc) && !HIDDEN(tc) 
-                  && tc->isfloating && !tc->isfullscreen 
-                  && (tcty = tc->y + HEIGHT(tc) + gap) >= ny && tcty < y) {
-                ny = tcty;
+              if (c->y > tc->y + HEIGHT(tc) + gap && tc->y + HEIGHT(tc) + gap > ny) {
+                ny = tc->y + HEIGHT(tc) + gap;
+              } else if (c->y + HEIGHT(c) > tc->y - gap && tc->y - gap > ny + HEIGHT(c)) {
+                ny = tc->y - gap - HEIGHT(c);
               }
             }
-            ny = MAX(ny, c->mon->wy - HEIGHT(c) * 0.9);
+            // 边缘吸附
+            gap = fgappoh;
+            if (c->y + HEIGHT(c) > c->mon->wy + c->mon->wh - gap && c->mon->wy + c->mon->wh - gap > ny + HEIGHT(c)) {
+              ny = c->mon->wy + c->mon->wh - gap - HEIGHT(c);
+            } else if (c->y > c->mon->wy + gap && c->mon->wy + gap > ny) {
+              ny = c->mon->wy + gap;
+            }
+            // 限制出窗
+            if (ny < c->mon->wy - HEIGHT(c))
+              ny = MAX(ny, c->mon->wy - HEIGHT(c) + gap + borderpx);
             break;
         case WIN_DOWN:
             ny += c->mon->wh / movewinthresholdv;
-            // 这里只取内部间距
-            gap = gappih;
+            // 窗口吸附
+            gap = fgappih;
             for (Client *tc = c->mon->clients; tc; tc = tc->next) {
-              int tcty;
-              if (tc != c && ISVISIBLE(tc) && !HIDDEN(tc) 
-                  && tc->isfloating && !tc->isfullscreen 
-                  && (tcty = tc->y - gap - HEIGHT(c)) <= ny && tcty > y) {
-                ny = tcty;
+              if (tc != c && ISVISIBLE(tc) && !HIDDEN(tc) && tc->isfloating && !tc->isfullscreen) {
+                if (c->y + HEIGHT(c) < tc->y - gap && tc->y - gap < ny + HEIGHT(c)) {
+                  ny = tc->y - gap - HEIGHT(c);
+                } else if (c->y < tc->y + HEIGHT(tc) + gap && tc->y + HEIGHT(tc) + gap < ny) {
+                  ny = tc->y + HEIGHT(tc) + gap;
+                }
               }
             }
-            ny = MIN(ny, c->mon->wy + c->mon->wh - HEIGHT(c) * 0.1);
+            // 边缘吸附
+            gap = fgappoh;
+            if (c->y < c->mon->wy + gap && c->mon->wy + gap < ny) {
+             ny = c->mon->wy + gap;
+            } else if (c->y + HEIGHT(c) < c->mon->wy + c->mon->wh - gap && c->mon->wy + c->mon->wh - gap < ny + HEIGHT(c)) {
+             ny = c->mon->wy + c->mon->wh - gap - HEIGHT(c);
+            }
+            // 限制出窗
+            if (ny > c->mon->wy + c->mon->wh - gap)
+              ny = c->mon->wy + c->mon->wh - gap;
             break;
         case WIN_LEFT:
             nx -= c->mon->ww / movewinthresholdh;
-            // 这里只取内部间距
-            gap = gappiv;
+            // 窗口吸附
+            gap = fgappiv;
             for (Client *tc = c->mon->clients; tc; tc = tc->next) {
-              int tctx;
-              if (tc != c && ISVISIBLE(tc) && !HIDDEN(tc) 
-                  && tc->isfloating && !tc->isfullscreen 
-                  && (tctx = tc->x + WIDTH(tc) + gap) >= nx && tctx < x) {
-                nx = tctx;
+              if (tc != c && ISVISIBLE(tc) && !HIDDEN(tc) && tc->isfloating && !tc->isfullscreen) {
+                if (c->x > tc->x + WIDTH(tc) + gap && tc->x + WIDTH(tc) + gap > nx) {
+                  nx = tc->x + WIDTH(tc) + gap;
+                } else if (c->x + WIDTH(c) > tc->x - gap && tc->x - gap > nx + WIDTH(c)) {
+                  nx = tc->x - gap - WIDTH(c);
+                }
               }
             }
-            nx = MAX(nx, c->mon->wx - WIDTH(c) * 0.9);
+            // 边缘吸附
+            gap = fgappov;
+            if (c->x + WIDTH(c) > c->mon->wx + c->mon->ww - gap && c->mon->wx + c->mon->ww - gap > nx + WIDTH(c)) {
+              nx = c->mon->wx + c->mon->ww - gap - WIDTH(c);
+            } else if (c->x > c->mon->wx + gap && c->mon->wx + gap > nx) {
+              nx = c->mon->wx + gap;
+            }
+            // 限制出窗
+            if (nx < c->mon->wx - WIDTH(c))
+              nx = c->mon->wx - WIDTH(c) + gap + borderpx;
             break;
         case WIN_RIGHT:
             nx += c->mon->ww / movewinthresholdh;
-            // 这里只取内部间距
-            gap = gappiv;
+            // 窗口吸附
+            gap = fgappiv;
             for (Client *tc = c->mon->clients; tc; tc = tc->next) {
-              int tctx;
-              if (tc != c && ISVISIBLE(tc) && !HIDDEN(tc) 
-                  && tc->isfloating && !tc->isfullscreen 
-                  && (tctx = tc->x - gap - WIDTH(c)) <= nx && tctx > x) {
-                nx = tctx;
+              if (tc != c && ISVISIBLE(tc) && !HIDDEN(tc) && tc->isfloating && !tc->isfullscreen) {
+                if (c->x + WIDTH(c) < tc->x - gap && tc->x - gap < nx + WIDTH(c)) {
+                  nx = tc->x - gap - WIDTH(c);
+                } else if (c->x < tc->x + WIDTH(tc) + gap && tc->x + WIDTH(tc) + gap < nx) {
+                  nx = tc->x + WIDTH(tc) + gap;
+                }
               }
             }
-            nx = MIN(nx, c->mon->wx + c->mon->ww - WIDTH(c) * 0.1);
+            // 边缘吸附
+            gap = fgappov;
+            if (c->x < c->mon->wx + gap && c->mon->wx + gap < nx) {
+              nx = c->mon->wx + gap;
+            } else if (c->x + WIDTH(c) < c->mon->wx + c->mon->ww - gap && c->mon->wx + c->mon->ww - gap < nx + WIDTH(c)) {
+              nx = c->mon->wx + c->mon->ww - gap - WIDTH(c);
+            }
+            // 限制出窗
+            if (nx > c->mon->wx + c->mon->ww - gap)
+              nx = c->mon->wx + c->mon->ww - gap;
             break;
     }
 
