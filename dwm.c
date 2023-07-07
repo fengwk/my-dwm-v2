@@ -105,6 +105,12 @@ typedef union {
 } Arg;
 
 typedef struct {
+	unsigned int signum;
+	void (*func)(const Arg *);
+	const Arg arg;
+} Signal;
+
+typedef struct {
   unsigned int click;
   unsigned int mask;
   unsigned int button;
@@ -225,6 +231,7 @@ static void configure(Client *c);
 static void configurenotify(XEvent *e);
 static void configurerequest(XEvent *e);
 static Monitor *createmon(void);
+static void dumpstatus(void);
 static void destroynotify(XEvent *e);
 static void detach(Client *c);
 static void detachstack(Client *c);
@@ -254,6 +261,7 @@ static void hide(const Arg *arg);
 static void hidewin(Client *c);
 static void incnmaster(const Arg *arg);
 static void keypress(XEvent *e);
+static int fake_signal(void);
 static void killclient(const Arg *arg);
 static void manage(Window w, XWindowAttributes *wa);
 static void mappingnotify(XEvent *e);
@@ -946,6 +954,24 @@ createmon(void)
   return m;
 }
 
+// dump当前dwm的状态
+static
+void dumpstatus(void) {
+  char cmd[1024];
+
+  if (selmon) {
+    snprintf(cmd, sizeof(cmd),
+        "/bin/bash -c 'mkdir -p ~/.cache/dwm/status && echo %d > ~/.cache/dwm/status/selmon'", selmon->num);
+    system(cmd);
+  }
+
+  if (selmon && selmon->sel) {
+    snprintf(cmd, sizeof(cmd),
+        "/bin/bash -c 'mkdir -p ~/.cache/dwm/status && echo %lu > ~/.cache/dwm/status/selwin'", selmon->sel->win);
+    system(cmd);
+  }
+}
+
 void
 destroynotify(XEvent *e)
 {
@@ -1172,6 +1198,7 @@ enternotify(XEvent *e)
   if (m != selmon) {
     unfocus(selmon->sel, 1);
     setselmon(m); // 这会导致使用rofi时错误的monitor聚焦（按照光标所在位置聚焦），但去除后会导致自动聚焦桌面失败
+    // 目前暂时无法复现自动聚焦桌面失败的情况 344b87f4ebd9d0c8894ec419f5d149e3426fbc54，但确实会使selmon语义错误
   } else if (!c || c == selmon->sel)
     return;
   focus(c);
@@ -1524,6 +1551,47 @@ keypress(XEvent *e)
     }
 }
 
+int
+fake_signal(void)
+{
+	char fsignal[256];
+	char indicator[9] = "fsignal:";
+	char str_signum[16];
+	int i, v, signum;
+	size_t len_fsignal, len_indicator = strlen(indicator);
+
+	// Get root name property
+	if (gettextprop(root, XA_WM_NAME, fsignal, sizeof(fsignal))) {
+		len_fsignal = strlen(fsignal);
+
+		// Check if this is indeed a fake signal
+		if (len_indicator > len_fsignal ? 0 : strncmp(indicator, fsignal, len_indicator) == 0) {
+			memcpy(str_signum, &fsignal[len_indicator], len_fsignal - len_indicator);
+			str_signum[len_fsignal - len_indicator] = '\0';
+
+			// Convert string value into managable integer
+			for (i = signum = 0; i < strlen(str_signum); i++) {
+				v = str_signum[i] - '0';
+				if (v >= 0 && v <= 9) {
+					signum = signum * 10 + v;
+				}
+			}
+
+			// Check if a signal was found, and if so handle it
+			if (signum)
+				for (i = 0; i < LENGTH(signals); i++)
+					if (signum == signals[i].signum && signals[i].func)
+						signals[i].func(&(signals[i].arg));
+
+			// A fake signal was sent
+			return 1;
+		}
+	}
+
+	// No fake signal was sent, so proceed with update
+	return 0;
+}
+
 void
 killclient(const Arg *arg)
 {
@@ -1797,8 +1865,10 @@ propertynotify(XEvent *e)
     resizebarwin(selmon);
     updatesystray();
   }
-  if ((ev->window == root) && (ev->atom == XA_WM_NAME))
-    updatestatus();
+  if ((ev->window == root) && (ev->atom == XA_WM_NAME)) {
+    if (!fake_signal())
+      updatestatus();
+  }
   else if (ev->state == PropertyDelete)
     return; /* ignore */
   else if ((c = wintoclient(ev->window))) {
@@ -3414,41 +3484,49 @@ updatewmhints(Client *c)
   }
 }
 
-void
-viewtoleft(const Arg *arg) {
-    unsigned int target = selmon->tagset[selmon->seltags], pre;
-    Client *c;
-    while (1) {
-        pre = target;
-        target >>= 1;
-        if (target == pre) return;
+void viewto(unsigned int movebit(unsigned int)) {
+  Monitor *mon = selmon;
+  // 不处理overview模式
+  if (mon->isoverview) {
+    return;
+  }
+  unsigned int seltags = mon->tagset[mon->seltags] & TAGMASK;
+  // 如果当前不只有一个选中tag则不进行处理
+  if (__builtin_popcount(seltags) != 1) {
+    return;
+  }
 
-        for (c = selmon->clients; c; c = c->next) {
-            if (c->tags & target && __builtin_popcount(selmon->tagset[selmon->seltags] & TAGMASK) == 1
-                    && selmon->tagset[selmon->seltags] > 1) {
-                view(&(Arg) { .ui = target });
-                return;
-            }
-        }
+  unsigned int nextSeltags = movebit(seltags) & TAGMASK;
+  while (nextSeltags) {
+    int hasVisiable = 0;
+    for (Client *c = mon->clients; c; c = c->next) {
+      if (c->tags & nextSeltags) {
+        hasVisiable = 1;
+        break;
+      }
     }
+    if (hasVisiable) {
+      view(&(Arg) { .ui = nextSeltags });
+      break;
+    }
+    nextSeltags = movebit(nextSeltags) & TAGMASK;
+  }
 }
 
-void
-viewtoright(const Arg *arg) {
-    unsigned int target = selmon->tagset[selmon->seltags];
-    Client *c;
-    while (1) {
-        target = target == 0 ? 1 : target << 1;
-        if (!(target & TAGMASK)) return;
+unsigned int tagmoveleft(unsigned int tag) {
+  return tag >> 1;
+}
 
-        for (c = selmon->clients; c; c = c->next) {
-            if (c->tags & target && __builtin_popcount(selmon->tagset[selmon->seltags] & TAGMASK) == 1
-                    && selmon->tagset[selmon->seltags] & (TAGMASK >> 1)) {
-                view(&(Arg) { .ui = target });
-                return;
-            }
-        }
-    }
+void viewtoleft(const Arg *arg) {
+  viewto(tagmoveleft);
+}
+
+unsigned int tagmoveright(unsigned int tag) {
+  return tag << 1;
+}
+
+void viewtoright(const Arg *arg) {
+  viewto(tagmoveright);
 }
 
 void

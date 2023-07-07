@@ -359,3 +359,11 @@ static const Button buttons[] = {
   { ClkWinTitle,          0,              Button4,        focusstackhid,  {.i = -1} }, // 在标题栏上鼠标上滚切换到上一个客户端
   { ClkWinTitle,          0,              Button5,        focusstackhid,  {.i = +1} }, // 在标题栏上鼠标上滚切换到下一个客户端
 };
+
+/* signal definitions */
+/* signum must be greater than 0 */
+/* trigger signals using `xsetroot -name "fsignal:<signum>"` */
+static Signal signals[] = {
+  /* signum       function        argument  */
+  {  1,           dumpstatus,     {.v = 0}},
+};
