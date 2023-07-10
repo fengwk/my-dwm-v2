@@ -1,0 +1,3 @@
+#!/bin/bash
+
+xsetroot -name 'fsignal:99'

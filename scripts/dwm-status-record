@@ -1,0 +1,4 @@
+#!/bin/bash
+
+mkdir -p ~/.cache/dwm/status
+echo "$1" > ~/.cache/dwm/status/$2

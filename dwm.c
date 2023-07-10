@@ -358,6 +358,7 @@ static void switchprevclient(const Arg *arg);
 static void switchclient(Client *c, int showhid);
 static void addaccstack(Client *c);
 static void removeaccstack(Client *c);
+static void switchenternotify(const Arg *arg);
 static Client *wintoclient(Window w);
 static Monitor *wintomon(Window w);
 static Client *wintosystrayicon(Window w);
@@ -423,6 +424,8 @@ static int useargb = 0;
 static Visual *visual;
 static int depth;
 static Colormap cmap;
+
+static int enableenternotify = 1;
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
@@ -1187,6 +1190,9 @@ drawbars(void)
 void
 enternotify(XEvent *e)
 {
+  if (!enableenternotify) {
+    return;
+  }
   Client *c;
   Monitor *m;
   XCrossingEvent *ev = &e->xcrossing;
@@ -1829,7 +1835,7 @@ movemouse(const Arg *arg)
 }
 
 /**
- * 找到下一个平铺client
+ * 从c开始（包含c）找到下一个可见的平铺client
  */
 Client *
 nexttiled(Client *c)
@@ -3634,24 +3640,28 @@ isprevclient(int switchmode, Client *src, Client *prev) {
 
 void
 setselmon(Monitor *newselmon) {
-  if (newselmon) {
+  if (newselmon && newselmon != selmon) {
     selmon = newselmon;
-    char cmd[1024];
-    snprintf(cmd, sizeof(cmd),
-        "/bin/bash -c 'mkdir -p ~/.cache/dwm/status && echo %d > ~/.cache/dwm/status/selmon'", newselmon->num);
-    system(cmd);
+
+    // 记录selmon状态
+    char selmonnumstr[10];
+    sprintf(selmonnumstr, "%d", newselmon->num);
+    char *cmd[] = { "dwm-status-record", selmonnumstr, "selmon", NULL };
+    Arg arg = { .v = cmd };
+    spawn(&arg);
   }
 }
 
 void
 setmonsel(Monitor *m, Client *c) {
-  if (m && c) {
+  if (m && c && m->sel != c) {
     m->sel = c;
     if (m == selmon) {
-      char cmd[1024];
-      snprintf(cmd, sizeof(cmd),
-          "/bin/bash -c 'mkdir -p ~/.cache/dwm/status && echo %lu > ~/.cache/dwm/status/selwin'", c->win);
-      system(cmd);
+      char selwinnum[10];
+      sprintf(selwinnum, "%lu", c->win);
+      char *cmd[] = { "dwm-status-record", selwinnum, "selwin", NULL };
+      Arg arg = { .v = cmd };
+      spawn(&arg);
     }
   }
 }
@@ -3700,7 +3710,7 @@ switchprevclient(const Arg *arg) {
 // 切换到指定client
 void
 switchclient(Client *c, int showhid) {
-  if (selmon->sel == c) {
+  if (!c) {
     return;
   }
   // 如果当前monitor并非client所在的monitor，跳到选择的监视器
@@ -3716,8 +3726,10 @@ switchclient(Client *c, int showhid) {
     showwin(c, 0);
   }
   // 聚焦并重置栈
-  focus(c);
-  restack(selmon);
+  if (selmon->sel != c) { // TODO 这个判断是为了避免一些场景下focus自身会打断应用行为，另外也可以减少性能消耗，暂时先加上观察是否会有其它问题
+    focus(c);
+    restack(selmon); // TODO 理论上如果无需focus那么在上一次的focus已经将堆栈排好了也不用重新restack，也先观察
+  }
   // 将选择的窗口置顶
   // XRaiseWindow(dpy, c->win);
   // 将选中窗口推到主工作区
@@ -3757,6 +3769,15 @@ removeaccstack(Client *c) {
       }
       free(curfree);
     }
+  }
+}
+
+void
+switchenternotify(const Arg *arg){
+  if (arg->ui) {
+    enableenternotify = 1;
+  } else {
+    enableenternotify = 0;
   }
 }
 

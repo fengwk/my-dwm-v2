@@ -40,8 +40,10 @@ dist: clean
 install: all
 	mkdir -p ${DESTDIR}${PREFIX}/bin
 	cp -f dwm ${DESTDIR}${PREFIX}/bin
-	ln -fs $(CURDIR)/dwm-scratchpadcmd $(DESTDIR)$(PREFIX)/bin
-	ln -fs $(CURDIR)/dwm-termcmd $(DESTDIR)$(PREFIX)/bin
+	ln -fs $(CURDIR)/scripts/dwm-scratchpadcmd $(DESTDIR)$(PREFIX)/bin
+	ln -fs $(CURDIR)/scripts/dwm-termcmd $(DESTDIR)$(PREFIX)/bin
+	ln -fs $(CURDIR)/scripts/dwm-quit $(DESTDIR)$(PREFIX)/bin
+	ln -fs $(CURDIR)/scripts/dwm-status-record $(DESTDIR)$(PREFIX)/bin
 	chmod 755 ${DESTDIR}${PREFIX}/bin/dwm
 	mkdir -p ${DESTDIR}${MANPREFIX}/man1
 	sed "s/VERSION/${VERSION}/g" < dwm.1 > ${DESTDIR}${MANPREFIX}/man1/dwm.1
@@ -51,6 +53,8 @@ uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/dwm\
 		${DESTDIR}${MANPREFIX}/man1/dwm.1
 	rm -f $(DESTDIR)$(PREFIX)/bin/dwm-scratchpadcmd
-	rm -f  $(DESTDIR)$(PREFIX)/bin/dwm-termcmd
+	rm -f $(DESTDIR)$(PREFIX)/bin/dwm-termcmd
+	rm -f $(DESTDIR)$(PREFIX)/bin/dwm-quit
+	rm -f $(DESTDIR)$(PREFIX)/bin/dwm-status-record
 
 .PHONY: all options clean dist install uninstall

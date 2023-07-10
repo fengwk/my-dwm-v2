@@ -13,10 +13,14 @@ static const unsigned int gappih    = 10;       /* horiz inner gap between windo
 static const unsigned int gappiv    = 10;       /* vert inner gap between windows */
 static const unsigned int gappoh    = 10;       /* horiz outer gap between windows and screen edge */
 static const unsigned int gappov    = 10;       /* vert outer gap between windows and screen edge */
-static const unsigned int fgappih   = gappih;   // for float
-static const unsigned int fgappiv   = gappiv;   // for float
-static const unsigned int fgappoh   = gappoh;   // for float
-static const unsigned int fgappov   = gappov;   // for float
+// static const unsigned int fgappih   = gappih;   // for float
+// static const unsigned int fgappiv   = gappiv;   // for float
+// static const unsigned int fgappoh   = gappoh;   // for float
+// static const unsigned int fgappov   = gappov;   // for float
+static const unsigned int fgappih   = 0;   // for float
+static const unsigned int fgappiv   = 0;   // for float
+static const unsigned int fgappoh   = 0;   // for float
+static const unsigned int fgappov   = 0;   // for float
 static const int movewinthresholdv  = 12; /* 垂直：这个阈值越大movewin操作改变的范围越小 */
 static const int movewinthresholdh  = 16; /* 水平：这个阈值越大movewin操作改变的范围越小 */
 static const int resizewinthresholdv= 20; /* 垂直：这个阈值越大resizewin操作改变的范围越小 */
@@ -187,7 +191,6 @@ static const char *flameshotcmd[] = { "flameshot-wrapper.sh", "gui", NULL };
 static const char *flameshotocrcmd[] = { "flameshot-ocr.sh", NULL };
 static const char *monitorswitch1[] = { "monitor-switch.sh", "1", NULL };
 static const char *monitorswitch2[] = { "monitor-switch.sh", "2", NULL };
-static const char *wpchange[] = { "wp-change.sh", NULL };
 static const char *mouseclick1[] = { "xdotool", "click", "1", NULL }; // 鼠标左键点击
 static const char *mouseclick2[] = { "xdotool", "click", "2", NULL }; // 鼠标中键点击
 static const char *mouseclick3[] = { "xdotool", "click", "3", NULL }; // 鼠标右键点击
@@ -222,7 +225,6 @@ static const Key keys[] = {
   /* monitor */
   { Mod4Mask,                     XK_1,         spawn,           {.v = monitorswitch1 } }, // 屏幕检测，单监视器
   { Mod4Mask,                     XK_2,         spawn,           {.v = monitorswitch2 } }, // 屏幕检测，双监视器
-  { Mod4Mask,                     XK_c,         spawn,           {.v = wpchange } },       // 切换壁纸
 
   /* 间隙调整 */
   { Mod4Mask|ShiftMask,           XK_BackSpace, togglesmartgaps, {0} },        // 智能间隙开关（仅有一个client时是否显示间隙）
@@ -331,7 +333,7 @@ static const Key keys[] = {
   TAGKEYS(                        XK_7,                          6)
   TAGKEYS(                        XK_8,                          7)
   TAGKEYS(                        XK_9,                          8)
-  { MODKEY|ShiftMask,             XK_q,         quit,            {0} },
+  // { MODKEY|ShiftMask,             XK_q,         quit,            {0} },
 };
 
 /* button definitions */
@@ -364,6 +366,9 @@ static const Button buttons[] = {
 /* signum must be greater than 0 */
 /* trigger signals using `xsetroot -name "fsignal:<signum>"` */
 static Signal signals[] = {
-  /* signum       function        argument  */
-  {  1,           dumpstatus,     {.v = 0}},
+  /* signum       function           argument  */
+  // {  1,           dumpstatus,     {.v = 0}},
+  {  97,          switchenternotify, {.ui = 1}},
+  {  98,          switchenternotify, {.ui = 0}},
+  {  99,          quit,              {0}},
 };
