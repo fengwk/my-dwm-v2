@@ -244,11 +244,7 @@ static void focus(Client *c);
 static void focusin(XEvent *e);
 static void focusmon(const Arg *arg);
 static void focusmonbyclient(Client *c);
-static void focusstackvis(const Arg *arg);
-static void focusstackhid(const Arg *arg);
-static void focusstackhidc(const Arg *arg);
-static void focusstackcursor(const Arg *arg);
-static void focusstack(int inc, int hid, int showhid);
+static void focusstack(const Arg *arg);
 static void focusclient(const Arg *arg);
 static Atom getatomprop(Client *c, Atom prop);
 static int getrootptr(int *x, int *y);
@@ -355,7 +351,7 @@ static int isprevclient(int switchmode, Client *src, Client *prev);
 static void setselmon(Monitor *newselmon);
 static void setmonsel(Monitor *m, Client *c);
 static void switchprevclient(const Arg *arg);
-static void switchclient(Client *c, int showhid);
+static void switchclient(Client *c);
 static void addaccstack(Client *c);
 static void removeaccstack(Client *c);
 static void switchenternotify(const Arg *arg);
@@ -816,7 +812,7 @@ clientmessage(XEvent *e)
     if (c != selmon->sel && !c->isurgent)
       seturgent(c, 1);
     // 收到通知后切换到指定client
-    switchclient(c, 1);
+    switchclient(c);
   }
 }
 
@@ -1226,8 +1222,10 @@ expose(XEvent *e)
 void
 focus(Client *c)
 {
+  // 如果c为NULL或c在当前选中tags下不可见，则找到第一个可见的c
   if (!c || !ISVISIBLE(c))
-    for (c = selmon->stack; c && (!ISVISIBLE(c) || HIDDEN(c)); c = c->snext);
+    for (c = selmon->stack; c && !ISVISIBLE(c); c = c->snext);
+  // 如果当前选中的窗口不是c则先unfocus当前选中窗口
   if (selmon->sel && selmon->sel != c) {
     unfocus(selmon->sel, 0);
   }
@@ -1237,6 +1235,9 @@ focus(Client *c)
     // 取消urgent标识
     if (c->isurgent)
       seturgent(c, 0); 
+    // 如果当前窗口是隐藏的，暂时清理当前hid
+    if (HIDDEN(c))
+      showwin(c, 0);
     // 浮动窗口或浮动布局在聚焦时将窗口置顶
     // if (c->isfloating || (c->mon && c->mon->sellt && !c->mon->lt[c->mon->sellt]->arrange))
     //   XRaiseWindow(dpy, c->win);
@@ -1298,53 +1299,35 @@ focusmonbyclient(Client *c) {
 }
 
 void
-focusstackvis(const Arg *arg) {
-	focusstack(arg->i, 0, 0);
-}
-
-void
-focusstackhid(const Arg *arg) {
-	focusstack(arg->i, 1, 1);
-}
-
-void
-focusstackhidc(const Arg *arg) {
-	focusstack(arg->i, 1, 0);
-}
-
-void
-focusstack(int inc, int hid, int showhid)
+focusstack(const Arg *arg)
 {
   Client *c = NULL, *i;
+  int inc = arg->i;
 
   // if no client selected AND exclude hidden client; if client selected but fullscreened
-  if ((!selmon->sel && !hid) || (selmon->sel && selmon->sel->isfullscreen && lockfullscreen))
+  if ((!selmon->sel) || (selmon->sel && selmon->sel->isfullscreen && lockfullscreen))
     return;
   if (!selmon->clients)
     return;
   if (inc > 0) {
     if (selmon->sel)
-      for (c = selmon->sel->next;
-          c && (!ISVISIBLE(c) || (!hid && HIDDEN(c)));
-          c = c->next);
+      for (c = selmon->sel->next; c && (!ISVISIBLE(c)); c = c->next);
     if (!c)
-      for (c = selmon->clients;
-          c && (!ISVISIBLE(c) || (!hid && HIDDEN(c)));
-          c = c->next);
+      for (c = selmon->clients; c && (!ISVISIBLE(c)); c = c->next);
   } else {
     if (selmon->sel) {
       for (i = selmon->clients; i != selmon->sel; i = i->next)
-        if (ISVISIBLE(i) && !(!hid && HIDDEN(i)))
+        if (ISVISIBLE(i))
           c = i;
     } else
       c = selmon->clients;
     if (!c)
       for (; i; i = i->next)
-        if (ISVISIBLE(i) && !(!hid && HIDDEN(i)))
+        if (ISVISIBLE(i))
           c = i;
   }
   if (c) {
-    switchclient(c, showhid);
+    switchclient(c);
   }
 }
 
@@ -1352,7 +1335,7 @@ void
 focusclient(const Arg *arg) {
   if (arg && arg->v) {
     Client *c = (Client *) arg->v;
-    switchclient(c, 1);
+    switchclient(c);
   }
 }
 
@@ -2748,7 +2731,7 @@ tagmon(const Arg *arg)
   if (!selmon->sel || !mons->next)
     return;
   sendmon(c, dirtomon(arg->i));
-  switchclient(c, 1);
+  switchclient(c);
 }
 
 /**
@@ -3061,14 +3044,23 @@ togglewin(const Arg *arg)
   if (!c) {
     return;
   }
-	if (c == selmon->sel) {
+	if (c == selmon->sel) { // 当前窗口就是选中窗口
     if (c->hid) {
 			showwin(c, 1);
     } else {
-      hidewin(c);
-      focus(NULL);
+      // 尝试找当前可见的不隐藏fc
+      Client *fc;
+      for (fc = selmon->clients; fc && (!ISVISIBLE(fc) || HIDDEN(fc) || fc == c); fc = fc->snext);
+      if (fc) {
+        // fc存在则隐藏当前窗口然后切到fc
+        hidewin(c);
+        focus(fc);
+      } else {
+        // fc不存在，说明找不到一个合适的窗口，那么还是显示当前窗口，仅设置hid标识
+        c->hid = 1;
+      }
     }
-	} else {
+	} else { // 当前窗口不是选中窗口
 		if (c->hid) {
 			showwin(c, 1);
       focus(c);
@@ -3640,9 +3632,8 @@ isprevclient(int switchmode, Client *src, Client *prev) {
 
 void
 setselmon(Monitor *newselmon) {
-  if (newselmon && newselmon != selmon) {
-    selmon = newselmon;
-
+  selmon = newselmon;
+  if (newselmon != selmon) {
     // 记录selmon状态
     char selmonnumstr[10];
     sprintf(selmonnumstr, "%d", newselmon->num);
@@ -3654,9 +3645,9 @@ setselmon(Monitor *newselmon) {
 
 void
 setmonsel(Monitor *m, Client *c) {
-  if (m && c && m->sel != c) {
+  if (m) {
     m->sel = c;
-    if (m == selmon) {
+    if (m == selmon && m->sel != c) {
       char selwinnum[10];
       sprintf(selwinnum, "%lu", c->win);
       char *cmd[] = { "dwm-status-record", selwinnum, "selwin", NULL };
@@ -3700,7 +3691,12 @@ switchprevclient(const Arg *arg) {
       f = f->next;
     }
     if (f) {
-      switchclient(f->c, 1);
+      // 如果当前选中窗口是不可见的，那么还是回到当前选中窗口，否则会不符合预期，比如tag1打开窗口，tag2再打开窗口，来到tag3切换时应当希望回到tag2，而不是tag1
+      Client *prevc = f->c;
+      if (!ISVISIBLE(selc)) {
+        prevc = selc;
+      }
+      switchclient(prevc);
     } else if (switchmode != SWITCH_WIN) {
       switchprevclient(&(Arg){.ui = SWITCH_WIN});
     }
@@ -3709,7 +3705,7 @@ switchprevclient(const Arg *arg) {
 
 // 切换到指定client
 void
-switchclient(Client *c, int showhid) {
+switchclient(Client *c) {
   if (!c) {
     return;
   }
@@ -3722,9 +3718,10 @@ switchclient(Client *c, int showhid) {
     view(&(Arg) { .ui = c->tags });
   }
   // 展示选中的隐藏窗口
-  if (showhid && HIDDEN(c)) {
-    showwin(c, 0);
-  }
+  // TODO 移动到focus中先观察
+  // if (HIDDEN(c)) {
+  //   showwin(c, 0);
+  // }
   // 聚焦并重置栈
   if (selmon->sel != c) { // TODO 这个判断是为了避免一些场景下focus自身会打断应用行为，另外也可以减少性能消耗，暂时先加上观察是否会有其它问题
     focus(c);
